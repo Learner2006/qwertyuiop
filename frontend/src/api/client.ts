@@ -1,5 +1,5 @@
 import { APP_CONFIG } from "../config";
-import { CheckResponse, EstimateResponse, HealthResponse } from "../types";
+import { CheckResponse, EstimateResponse, HealthResponse, MonthSummaryResponse } from "../types";
 
 const BASE_URL = APP_CONFIG.apiBaseUrl;
 
@@ -7,6 +7,14 @@ export async function fetchHealth(): Promise<HealthResponse> {
   const res = await fetch(`${BASE_URL}/api/health`);
   if (!res.ok) {
     throw new Error(`Health check failed with HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function fetchSummary(percentile: number = 75): Promise<MonthSummaryResponse> {
+  const res = await fetch(`${BASE_URL}/api/summary?percentile=${percentile}`);
+  if (!res.ok) {
+    throw new Error(`Summary request failed with HTTP ${res.status}`);
   }
   return res.json();
 }

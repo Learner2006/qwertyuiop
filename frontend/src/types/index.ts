@@ -8,6 +8,20 @@ export interface HealthResponse {
   version: string;
 }
 
+export interface MonthSummaryResponse {
+  decision_dates_count: number;
+  period_start: string;
+  period_end: string;
+  percentile: number;
+  total_elexon_shortfall_mwh: number;
+  total_safe_shortfall_mwh: number;
+  total_avoided_shortfall_mwh: number;
+  total_extra_advance_planned_mwh: number;
+  days_shortfall_reduced: number;
+  days_shortfall_increased: number;
+  summary_sentence: string;
+}
+
 export interface EstimateInterval {
   interval_start: string;
   settlement_period: number;

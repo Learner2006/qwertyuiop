@@ -19,6 +19,17 @@ def test_health_endpoint():
     assert data["date_coverage_end"] == "2026-01-31"
 
 
+def test_summary_endpoint():
+    resp = client.get("/api/summary?percentile=75")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["decision_dates_count"] == 30
+    assert data["total_elexon_shortfall_mwh"] > 1000000
+    assert data["total_avoided_shortfall_mwh"] > 0
+    assert data["total_extra_advance_planned_mwh"] > 0
+    assert "Across Jan 2026" in data["summary_sentence"]
+
+
 def test_estimate_endpoint_valid():
     resp = client.get("/api/estimate?date=2026-01-25&percentile=75")
     assert resp.status_code == 200

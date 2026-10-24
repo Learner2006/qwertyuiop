@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import check, estimate, health
+from app.routers import check, estimate, health, summary
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("main")
@@ -29,6 +29,7 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api")
 app.include_router(estimate.router, prefix="/api")
 app.include_router(check.router, prefix="/api")
+app.include_router(summary.router, prefix="/api")
 
 
 @app.get("/")

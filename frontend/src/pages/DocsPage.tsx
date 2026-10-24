@@ -71,12 +71,13 @@ export const DocsPage: React.FC = () => {
         </h2>
         <div className="p-4 rounded-xl bg-sky-50/70 border border-sky-200 text-xs text-sky-950 space-y-2">
           <p className="font-semibold text-sm">
-            Core Replay Rule: At decision date D cutoff 09:00 UTC, use only information available by 09:00 UTC on day D.
+            Core Replay Rule: At decision date D, use only information published at or before 09:00 UTC on day D.
           </p>
           <ul className="list-disc list-inside space-y-1 text-sky-900">
-            <li><strong>Target Forecast:</strong> For target day D+1, select the latest forecast vintage published at or before D at 09:00 UTC. Never use intraday updates or forecasts published after the cutoff.</li>
-            <li><strong>Historical Calibration:</strong> Calibration history uses prior half-hourly slots where both the day-ahead forecast and actual generation were published at or before D at 09:00 UTC.</li>
-            <li><strong>Zero Future Leakage:</strong> No target-day actual observations or outcome statistics are ever passed to the estimate pipeline. Verified by automated release-blocking unit tests.</li>
+            <li><strong>No Future Data Leakage:</strong> Forecasts published and actuals recorded after 09:00 UTC on the decision day are never used. Verified by automated replay isolation tests.</li>
+            <li><strong>Target Forecast Selection:</strong> For target day D+1, select the latest forecast vintage published at or before 09:00 UTC on day D. Never use intraday updates or forecasts published after the cutoff.</li>
+            <li><strong>Historical Calibration:</strong> Calibration history uses prior half-hourly slots where both the day-ahead forecast and actual generation were published at or before 09:00 UTC on day D.</li>
+            <li><strong>Premise Assumption:</strong> We assume replacement power bought close to delivery tends to cost more than power arranged in advance. We don’t model prices, so results are shown in MWh.</li>
           </ul>
         </div>
       </section>

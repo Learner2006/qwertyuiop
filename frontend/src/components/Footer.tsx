@@ -12,7 +12,7 @@ export const Footer: React.FC = () => {
               {APP_CONFIG.productName}
             </h3>
             <p className="text-sm text-slate-600 leading-relaxed">
-              {APP_CONFIG.pitch}
+              Cautious day-ahead wind estimation evaluated against realized generation outturns across January 2026.
             </p>
             <div className="mt-3 inline-flex items-center text-xs text-slate-500 font-mono bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
               Data standard: UTC throughout
@@ -34,7 +34,7 @@ export const Footer: React.FC = () => {
               </li>
               <li className="flex items-center space-x-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                <span>No future data leakage (09:00 UTC cutoff)</span>
+                <span>Cutoff: Published at or before 09:00 UTC on decision day</span>
               </li>
             </ul>
           </div>
@@ -51,8 +51,13 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400">
-          <p>© 2026 {APP_CONFIG.productName}. Built for rigorous verification and reproducibility.</p>
-          <p className="mt-2 sm:mt-0 font-mono">Status: Ready · Parquet Cached</p>
+          <p>© 2026 {APP_CONFIG.productName}. Built to demonstrate transparent day-ahead wind risk estimation using public Elexon BMRS data.</p>
+          <a
+            href="/docs"
+            className="mt-2 sm:mt-0 text-slate-500 hover:text-slate-800 underline transition-colors"
+          >
+            Methodology & Test Specifications →
+          </a>
         </div>
       </div>
     </footer>

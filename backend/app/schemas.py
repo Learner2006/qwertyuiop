@@ -16,6 +16,20 @@ class HealthResponse(BaseModel):
     version: str = "1.0.0"
 
 
+class MonthSummaryResponse(BaseModel):
+    decision_dates_count: int
+    period_start: str
+    period_end: str
+    percentile: float
+    total_elexon_shortfall_mwh: float
+    total_safe_shortfall_mwh: float
+    total_avoided_shortfall_mwh: float
+    total_extra_advance_planned_mwh: float
+    days_shortfall_reduced: int
+    days_shortfall_increased: int
+    summary_sentence: str
+
+
 class EstimateInterval(BaseModel):
     interval_start: str = Field(..., description="UTC ISO-8601 start timestamp")
     settlement_period: int = Field(..., ge=1, le=48)

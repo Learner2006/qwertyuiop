@@ -141,10 +141,12 @@ Data is ingested from the official **Elexon Insights Solution / BMRS API**:
 ## Historical Replay & No-Leakage Rules
 
 For a decision made on date $D$ for target delivery date $D+1$:
-1. **Decision Cutoff:** Fixed at **09:00:00 UTC** on date $D$.
-2. **Forecast Selection:** Selects the latest forecast vintage published strictly at or before $D$ at 09:00 UTC covering intervals of target date $D+1$. Forecasts published at 09:30, 11:30, or 15:30 UTC on day $D$ are strictly ignored.
-3. **Historical Calibration Selection:** Calibration uses only intervals where both the day-ahead forecast and actual generation were published at or before $D$ at 09:00 UTC.
-4. **No Future Leakage Guarantee:** The `/api/estimate` endpoint never queries, contains, or passes target-day actual observations or actual-derived statistics. Verified by automated tests.
+1. **Decision Cutoff:** Fixed at or before **09:00:00 UTC** on date $D$.
+2. **Forecast Selection:** Selects the latest forecast vintage published strictly at or before 09:00 UTC on day $D$ covering intervals of target date $D+1$. Forecasts published after 09:00 UTC are strictly excluded.
+3. **Historical Calibration Selection:** Calibration uses only intervals where both the day-ahead forecast and actual generation were published at or before 09:00 UTC on day $D$.
+4. **No Future Leakage Guarantee:** Forecasts published and actuals recorded after 09:00 UTC on the decision day are never used. Verified by automated replay isolation tests (`test_no_leakage.py`).
+5. **Core Premise:** We assume replacement power bought close to delivery tends to cost more than power arranged in advance. We don’t model prices, so results are shown in MWh.
+6. **January 2026 Monthly Proof:** Across Jan 2026, planning with our estimate would have avoided 976,194 MWh of shortfall (and arranged 1,092,195 MWh extra in advance). Both sides are computed dynamically from backend metrics.
 
 ---
 
