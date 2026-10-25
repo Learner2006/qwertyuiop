@@ -7,26 +7,87 @@ interface ShortfallComparisonBarsProps {
 }
 
 export const ShortfallComparisonBars: React.FC<ShortfallComparisonBarsProps> = ({ checkData }) => {
+  const [modelMode, setModelMode] = React.useState<"v1" | "v2">("v1");
+
+  const effectiveSafeShortfall = modelMode === "v2" && checkData.v2_safe_shortfall_mwh !== undefined
+    ? checkData.v2_safe_shortfall_mwh
+    : checkData.safe_shortfall_mwh;
+
+  const effectiveSavedShortfall = modelMode === "v2" && checkData.v2_saved_shortfall_mwh !== undefined
+    ? checkData.v2_saved_shortfall_mwh
+    : checkData.saved_shortfall_mwh;
+
+  const effectiveSafeSurplus = modelMode === "v2" && checkData.v2_safe_surplus_mwh !== undefined
+    ? checkData.v2_safe_surplus_mwh
+    : (checkData.safe_surplus_mwh ?? checkData.extra_advance_planned_mwh);
+
+  const effectiveIncrementalSurplus = modelMode === "v2" && checkData.v2_incremental_surplus_mwh !== undefined
+    ? checkData.v2_incremental_surplus_mwh
+    : Math.max(0, (checkData.safe_surplus_mwh ?? checkData.extra_advance_planned_mwh) - (checkData.elexon_surplus_mwh ?? 0));
+
   const {
     elexon_shortfall_mwh,
-    safe_shortfall_mwh,
-    saved_shortfall_mwh,
-    extra_advance_planned_mwh,
+    elexon_surplus_mwh = 0,
     elexon_mae_gw,
     safe_mae_gw,
     indicative_range_coverage,
     headline_result,
   } = checkData;
 
+  const safe_shortfall_mwh = effectiveSafeShortfall;
+  const saved_shortfall_mwh = effectiveSavedShortfall;
+  const safe_surplus_mwh = effectiveSafeSurplus;
+  const displayIncrementalSurplus = effectiveIncrementalSurplus;
+
   const maxSf = Math.max(elexon_shortfall_mwh, safe_shortfall_mwh, 1.0);
-  const elexonPct = (elexon_shortfall_mwh / maxSf) * 100;
-  const safePct = (safe_shortfall_mwh / maxSf) * 100;
+  const elexonSfPct = (elexon_shortfall_mwh / maxSf) * 100;
+  const safeSfPct = (safe_shortfall_mwh / maxSf) * 100;
+
+  const maxSurplus = Math.max(elexon_surplus_mwh, safe_surplus_mwh, 1.0);
+  const elexonSurplusPct = (elexon_surplus_mwh / maxSurplus) * 100;
+  const safeSurplusPct = (safe_surplus_mwh / maxSurplus) * 100;
 
   const isSavedPositive = saved_shortfall_mwh > 0;
   const isSavedNegative = saved_shortfall_mwh < 0;
 
   return (
     <div className="space-y-6 mb-8">
+      {/* Model Version Selector (v1 Declared vs v2 Proportional) */}
+      {checkData.v2_saved_shortfall_mwh !== undefined && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-100 rounded-xl border border-slate-200">
+          <div className="text-xs">
+            <span className="font-bold text-slate-900 block">Evaluated Model Specification:</span>
+            <span className="text-slate-500">
+              {modelMode === "v1"
+                ? "v1: Original declared model (48h error quantile floored at 0)."
+                : `v2: Proportional margin model (${((checkData.v2_ratio || 0.15) * 100).toFixed(1)}% cut).`}
+            </span>
+          </div>
+          <div className="inline-flex rounded-lg bg-white p-0.5 border border-slate-200 text-xs font-semibold shrink-0">
+            <button
+              onClick={() => setModelMode("v1")}
+              className={`px-3 py-1.5 rounded-md transition-colors ${
+                modelMode === "v1"
+                  ? "bg-sky-600 text-white shadow-2xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              v1 (Additive p75)
+            </button>
+            <button
+              onClick={() => setModelMode("v2")}
+              className={`px-3 py-1.5 rounded-md transition-colors ${
+                modelMode === "v2"
+                  ? "bg-sky-600 text-white shadow-2xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              v2 (Proportional p75)
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Dynamic Headline Result Banner */}
       <div
         className={`p-5 rounded-xl border ${
@@ -49,73 +110,135 @@ export const ShortfallComparisonBars: React.FC<ShortfallComparisonBarsProps> = (
             {headline_result}
           </h3>
           <p className="text-xs opacity-85 mt-1 leading-relaxed">
-            Avoided shortfall energy comparison based on historical Elexon BMRS outturn replay. This evaluates physical energy exposure (MWh), not cash savings.
+            Avoided shortfall energy comparison based on historical Elexon FUELHH outturn replay. This evaluates physical energy exposure (MWh), not cash savings.
           </p>
         </div>
       </div>
 
-      {/* Shortfall Comparison Bars Card */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-6">
-          Day-Ahead Shortfall Energy Comparison (MWh)
-        </h3>
-
-        <div className="space-y-6">
-          {/* Elexon Shortfall Bar */}
-          <div>
-            <div className="flex justify-between items-center text-xs mb-1.5 font-medium">
-              <span className="text-slate-700">Elexon Unadjusted Forecast Shortfall:</span>
-              <span className="font-mono font-bold text-amber-700 text-sm">
-                {elexon_shortfall_mwh.toLocaleString()} MWh
-              </span>
-            </div>
-            <div className="w-full h-5 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 p-0.5">
-              <div
-                className="h-full bg-amber-500 rounded-md transition-all duration-500"
-                style={{ width: `${Math.max(2, elexonPct)}%` }}
-              />
-            </div>
+      {/* Side-by-Side Shortfall and Surplus Apples-to-Apples Comparisons */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Shortfall Comparison Card */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Downside Shortfall Energy (MWh)
+            </h3>
+            <span className="text-[11px] font-mono text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+              Lower is safer
+            </span>
           </div>
 
-          {/* Our Safe Estimate Shortfall Bar */}
-          <div>
-            <div className="flex justify-between items-center text-xs mb-1.5 font-medium">
-              <span className="text-slate-700 font-semibold">Our Cautious Estimate Shortfall:</span>
-              <span className="font-mono font-bold text-slate-900 text-sm">
-                {safe_shortfall_mwh.toLocaleString()} MWh
-              </span>
-            </div>
-            <div className="w-full h-5 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 p-0.5">
-              <div
-                className="h-full bg-slate-800 rounded-md transition-all duration-500"
-                style={{ width: `${Math.max(2, safePct)}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Avoided Shortfall Energy Metric */}
-          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-5">
+            {/* Elexon Shortfall Bar */}
             <div>
-              <span className="text-xs text-slate-500 block">Avoided Shortfall Energy:</span>
-              <span className="text-xs text-slate-400">
-                Formula: elexon_shortfall_mwh − our_shortfall_mwh
-              </span>
+              <div className="flex justify-between items-center text-xs mb-1.5 font-medium">
+                <span className="text-slate-600">Elexon Unadjusted Shortfall:</span>
+                <span className="font-mono font-bold text-amber-700 text-sm">
+                  {Math.round(elexon_shortfall_mwh).toLocaleString()} MWh
+                </span>
+              </div>
+              <div className="w-full h-4 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 p-0.5">
+                <div
+                  className="h-full bg-amber-500 rounded-md transition-all duration-500"
+                  style={{ width: `${Math.max(2, elexonSfPct)}%` }}
+                />
+              </div>
             </div>
-            <div className="text-right">
-              <span
-                className={`text-xl font-bold font-mono ${
-                  isSavedPositive
-                    ? "text-emerald-600"
-                    : isSavedNegative
-                    ? "text-amber-600"
-                    : "text-slate-600"
-                }`}
-              >
-                {isSavedPositive ? `+${saved_shortfall_mwh.toLocaleString()}` : saved_shortfall_mwh.toLocaleString()} MWh
-              </span>
-              <span className="block text-[11px] text-slate-400">
-                {isSavedPositive ? "Reduced downside exposure" : (isSavedNegative ? "Higher shortfall on this day" : "Equal shortfall")}
-              </span>
+
+            {/* Our Safe Estimate Shortfall Bar */}
+            <div>
+              <div className="flex justify-between items-center text-xs mb-1.5 font-medium">
+                <span className="text-slate-700 font-semibold">{modelMode === "v2" ? "v2 Cautious Shortfall:" : "v1 Cautious Shortfall:"}</span>
+                <span className="font-mono font-bold text-slate-900 text-sm">
+                  {Math.round(safe_shortfall_mwh).toLocaleString()} MWh
+                </span>
+              </div>
+              <div className="w-full h-4 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 p-0.5">
+                <div
+                  className="h-full bg-slate-800 rounded-md transition-all duration-500"
+                  style={{ width: `${Math.max(2, safeSfPct)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Avoided Shortfall Energy Metric */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-medium text-slate-600 block">Avoided Shortfall:</span>
+                <span className="text-[11px] text-slate-400">Elexon SF − Safe SF</span>
+              </div>
+              <div className="text-right">
+                <span
+                  className={`text-lg font-bold font-mono ${
+                    isSavedPositive
+                      ? "text-emerald-600"
+                      : isSavedNegative
+                      ? "text-amber-600"
+                      : "text-slate-600"
+                  }`}
+                >
+                  {isSavedPositive ? `+${Math.round(saved_shortfall_mwh).toLocaleString()}` : Math.round(saved_shortfall_mwh).toLocaleString()} MWh
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Surplus / Advance-Planned Wind Card (Apples-to-Apples) */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Wind Above Plan (MWh)
+            </h3>
+            <span className="text-[11px] font-mono text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+              Advance supply trade-off
+            </span>
+          </div>
+
+          <div className="space-y-5">
+            {/* Elexon Surplus Bar */}
+            <div>
+              <div className="flex justify-between items-center text-xs mb-1.5 font-medium">
+                <span className="text-slate-600">Elexon Plan Surplus:</span>
+                <span className="font-mono font-bold text-sky-700 text-sm">
+                  {Math.round(elexon_surplus_mwh).toLocaleString()} MWh
+                </span>
+              </div>
+              <div className="w-full h-4 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 p-0.5">
+                <div
+                  className="h-full bg-sky-400 rounded-md transition-all duration-500"
+                  style={{ width: `${Math.max(2, elexonSurplusPct)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Our Safe Estimate Surplus Bar */}
+            <div>
+              <div className="flex justify-between items-center text-xs mb-1.5 font-medium">
+                <span className="text-slate-700 font-semibold">{modelMode === "v2" ? "v2 Plan Surplus:" : "v1 Plan Surplus:"}</span>
+                <span className="font-mono font-bold text-slate-900 text-sm">
+                  {Math.round(safe_surplus_mwh).toLocaleString()} MWh
+                </span>
+              </div>
+              <div className="w-full h-4 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 p-0.5">
+                <div
+                  className="h-full bg-slate-800 rounded-md transition-all duration-500"
+                  style={{ width: `${Math.max(2, safeSurplusPct)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Incremental Advance Wind Metric */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-medium text-slate-600 block">Incremental Extra Arranged:</span>
+                <span className="text-[11px] text-slate-400">Replacement planned but not needed</span>
+              </div>
+              <div className="text-right">
+                <span className="text-lg font-bold font-mono text-slate-800">
+                  +{Math.round(displayIncrementalSurplus).toLocaleString()} MWh
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -128,14 +251,14 @@ export const ShortfallComparisonBars: React.FC<ShortfallComparisonBarsProps> = (
           <div className="flex items-center space-x-2 text-sky-700 mb-2">
             <PackagePlus className="w-4 h-4" />
             <h4 className="text-xs font-semibold uppercase tracking-wider">
-              Additional Advance Wind
+              Incremental Advance Power
             </h4>
           </div>
           <div className="text-xl font-bold font-mono text-slate-900 mt-1">
-            {extra_advance_planned_mwh.toLocaleString()} MWh
+            +{Math.round(displayIncrementalSurplus).toLocaleString()} MWh
           </div>
           <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-            Actual wind generation above our planned estimate. Illustrates the trade-off of caution; not a measure of thermal procurement cost.
+            Wind above cautious plan (replacement power planned in advance but not needed).
           </p>
         </div>
 
@@ -159,7 +282,7 @@ export const ShortfallComparisonBars: React.FC<ShortfallComparisonBarsProps> = (
             </div>
           </div>
           <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-            Reducing shortfall shifts bias downward and does not necessarily optimize symmetric MAE.
+            Reducing shortfall shifts bias downward and does not optimize symmetric MAE.
           </p>
         </div>
 

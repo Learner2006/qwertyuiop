@@ -19,6 +19,7 @@ class Settings(BaseModel):
     COLD_START_HAIRCUT: float = 0.15
     DECISION_CUTOFF_HOUR_UTC: int = 9
     DECISION_CUTOFF_MINUTE_UTC: int = 0
+    ACTUALS_PUBLICATION_LAG_HOURS: float = 1.0  # 1-hour publication lag for metered outturns
     
     # Error band quantiles
     ERROR_BAND_LOWER_QUANTILE: float = 10.0

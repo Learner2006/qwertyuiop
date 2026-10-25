@@ -18,12 +18,12 @@ python3 -m pytest backend/tests -v
 # 3. Frontend TypeScript Typecheck
 echo ""
 echo "--> STEP 3: Running Frontend TypeScript Check (tsc)..."
-cd frontend && npx tsc --noEmit && cd ..
+(cd frontend && npx tsc --noEmit)
 
 # 4. Frontend Production Build
 echo ""
 echo "--> STEP 4: Running Frontend Production Build (vite build)..."
-cd frontend && npm run build && cd ..
+(cd frontend && npm run build)
 
 echo ""
 echo "=========================================================="

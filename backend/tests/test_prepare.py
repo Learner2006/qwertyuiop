@@ -51,13 +51,13 @@ def test_calibration_observations_history(data_manager):
     hist_jan1 = data_manager.get_calibration_observations(datetime.date(2026, 1, 1))
     assert len(hist_jan1) == 0
 
-    # Jan 2: intervals from Jan 2 morning (00:00 to 08:30) = 18 intervals
+    # Jan 2: intervals from Jan 2 morning ending >= 1h before 09:00 cutoff (00:00 to 07:30) = 16 intervals
     hist_jan2 = data_manager.get_calibration_observations(datetime.date(2026, 1, 2))
-    assert len(hist_jan2) == 18
+    assert len(hist_jan2) == 16
 
-    # Jan 3: Jan 2 (48) + Jan 3 morning (18) = 66 intervals
+    # Jan 3: Jan 2 (48) + Jan 3 morning (16) = 64 intervals
     hist_jan3 = data_manager.get_calibration_observations(datetime.date(2026, 1, 3))
-    assert len(hist_jan3) == 66
+    assert len(hist_jan3) == 64
 
     # Jan 4 onwards: capped at 96 intervals
     hist_jan4 = data_manager.get_calibration_observations(datetime.date(2026, 1, 4))

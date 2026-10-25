@@ -65,32 +65,38 @@ def test_leakage_1_target_forecast_published_after_cutoff(real_data_manager):
 
 
 def test_leakage_2_actual_available_after_cutoff(real_data_manager):
-    """Test 2: An actual observation that becomes available after cutoff (e.g. interval 09:00-09:30 on day D,
-    published at 09:30 UTC) cannot enter the calibration history."""
+    """Test 2: An actual observation that becomes available after cutoff or within the 1-hour publication lag
+    (e.g. interval 08:00-08:30 published at 08:30 UTC, or interval 09:00-09:30 on day D, published at 09:30 UTC)
+    cannot enter the calibration history."""
     dec_date = datetime.date(2026, 1, 15)
     cutoff_dt = pd.Timestamp("2026-01-15T09:00:00Z")
+    lag_cutoff_dt = cutoff_dt - pd.Timedelta(hours=settings.ACTUALS_PUBLICATION_LAG_HOURS)
 
     baseline_hist = real_data_manager.get_calibration_observations(dec_date)
 
-    # Verify that no interval in baseline history was published after cutoff
+    # Verify that no interval in baseline history was published after the publication lag cutoff (08:00 UTC)
     for obs in baseline_hist:
-        assert obs["interval_start"] < cutoff_dt
+        assert obs["interval_start"] < lag_cutoff_dt
 
-    # Inject an actual observation published at 09:30 UTC on day D with extreme error
-    future_actual = {
+    # Also verify that interval 08:00-08:30 on day D (ending 08:30 UTC) is strictly excluded
+    interval_8am = pd.Timestamp("2026-01-15T08:00:00Z")
+    assert not any(obs["interval_start"] == interval_8am for obs in baseline_hist)
+
+    # Inject an actual observation published at 08:30 UTC on day D (within the 1-hour publication lag window)
+    within_lag_actual = {
         "record_type": "actual",
-        "interval_start": pd.Timestamp("2026-01-15T09:00:00Z"),
-        "publish_time": pd.Timestamp("2026-01-15T09:30:00Z"),
+        "interval_start": pd.Timestamp("2026-01-15T08:00:00Z"),
+        "publish_time": pd.Timestamp("2026-01-15T08:30:00Z"),
         "generation_mw": 50000.0,
         "generation_gw": 50.0,
         "settlement_date": "2026-01-15",
-        "settlement_period": 19,
+        "settlement_period": 17,
     }
 
     orig_actuals = real_data_manager._actuals_df.copy()
     try:
         real_data_manager._actuals_df = pd.concat(
-            [orig_actuals, pd.DataFrame([future_actual])],
+            [orig_actuals, pd.DataFrame([within_lag_actual])],
             ignore_index=True
         ).sort_values("interval_start").reset_index(drop=True)
 

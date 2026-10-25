@@ -1,6 +1,6 @@
 import React from "react";
 import { APP_CONFIG } from "../config";
-import { Wind, ShieldCheck, FileText, ArrowRight, Activity } from "lucide-react";
+import { ShieldCheck, FileText, ArrowRight, Activity } from "lucide-react";
 
 interface NavbarProps {
   currentPath: string;
@@ -16,15 +16,47 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPath, onNavigate }) => {
           onClick={() => onNavigate("/")}
           className="flex items-center space-x-3 cursor-pointer group"
         >
-          <div className="w-10 h-10 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600 group-hover:bg-sky-100 transition-colors">
-            <Wind className="w-6 h-6" />
+          {/* Patterned Star Logo in White */}
+          <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-white shadow-xs group-hover:bg-slate-800 transition-colors">
+            <svg
+              className="w-5 h-5 text-white"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-label="Logo"
+            >
+              {/* Outer 4-point star silhouette */}
+              <path
+                d="M12 2L14.2 9.8L22 12L14.2 14.2L12 22L9.8 14.2L2 12L9.8 9.8Z"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+              {/* Inner concentric geometric star pattern */}
+              <path
+                d="M12 6L13.5 10.5L18 12L13.5 13.5L12 18L10.5 13.5L6 12L10.5 10.5Z"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeOpacity="0.7"
+              />
+              {/* Center core */}
+              <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+              {/* Pattern ray lines connecting the geometry */}
+              <path
+                d="M12 2V6M12 18V22M2 12H6M18 12H22M6 6L8.5 8.5M18 6L15.5 8.5M6 18L8.5 15.5M18 18L15.5 15.5"
+                stroke="currentColor"
+                strokeWidth="1"
+                strokeLinecap="round"
+                strokeOpacity="0.5"
+              />
+            </svg>
           </div>
           <div>
             <span className="font-semibold text-lg text-slate-900 tracking-tight block">
               {APP_CONFIG.productName}
             </span>
             <span className="text-xs text-slate-500 font-mono">
-              Elexon BMRS Replay · UTC
+              Elexon Replay · UTC
             </span>
           </div>
         </div>

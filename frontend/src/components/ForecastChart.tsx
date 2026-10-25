@@ -32,7 +32,6 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ intervals, targetD
       indicativeLower: int.indicative_lower_gw,
       indicativeUpper: int.indicative_upper_gw,
       appliedMargin: int.applied_margin_gw,
-      // For Area range in Recharts:
       rangeBand: [int.indicative_lower_gw, int.indicative_upper_gw],
     };
   });
@@ -51,7 +50,7 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ intervals, targetD
 
         <button
           onClick={() => setShowTable(!showTable)}
-          className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 transition-colors self-start sm:self-auto"
+          className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 transition-colors self-start sm:self-auto cursor-pointer"
         >
           <Table className="w-3.5 h-3.5 text-slate-500" />
           <span>{showTable ? "View Chart" : "View Accessible Table"}</span>
@@ -105,21 +104,21 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ intervals, targetD
                           {data.time} UTC (SP {data.settlementPeriod})
                         </div>
                         <div className="flex justify-between gap-4 text-sky-300">
-                          <span>Raw Elexon:</span>
-                          <span className="font-bold">{data.elexonForecast.toFixed(3)} GW</span>
+                          <span>Elexon Forecast:</span>
+                          <span className="font-bold">{data.elexonForecast.toFixed(1)} GW</span>
                         </div>
                         <div className="flex justify-between gap-4 text-emerald-300">
                           <span>Our Safe Estimate:</span>
-                          <span className="font-bold">{data.safeEstimate.toFixed(3)} GW</span>
+                          <span className="font-bold">{data.safeEstimate.toFixed(1)} GW</span>
                         </div>
                         <div className="flex justify-between gap-4 text-amber-300">
                           <span>Applied Margin:</span>
-                          <span>-{data.appliedMargin.toFixed(3)} GW</span>
+                          <span>-{data.appliedMargin.toFixed(1)} GW</span>
                         </div>
                         <div className="flex justify-between gap-4 text-slate-400 pt-1 border-t border-slate-800">
-                          <span>Indicative Band:</span>
+                          <span>Typical Error Range:</span>
                           <span>
-                            [{data.indicativeLower.toFixed(3)} – {data.indicativeUpper.toFixed(3)}] GW
+                            [{data.indicativeLower.toFixed(1)} – {data.indicativeUpper.toFixed(1)}] GW
                           </span>
                         </div>
                       </div>
@@ -136,11 +135,11 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ intervals, targetD
                 )}
               />
 
-              {/* Indicative Range Area */}
+              {/* Typical Error Range Area */}
               <Area
-                type="monotone"
+                type="linear"
                 dataKey="rangeBand"
-                name="Indicative Range (p10–p90)"
+                name="Typical error range (p10–p90 from last 48h)"
                 fill="#e0f2fe"
                 stroke="#bae6fd"
                 strokeDasharray="2 2"
@@ -149,7 +148,7 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ intervals, targetD
 
               {/* Elexon Raw Forecast */}
               <Line
-                type="monotone"
+                type="linear"
                 dataKey="elexonForecast"
                 name="Elexon Forecast (Raw)"
                 stroke="#0284c7"
@@ -161,7 +160,7 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ intervals, targetD
 
               {/* Safe Estimate */}
               <Line
-                type="monotone"
+                type="linear"
                 dataKey="safeEstimate"
                 name="Safe Estimate (Our Plan)"
                 stroke="#0f172a"
@@ -183,7 +182,7 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ intervals, targetD
                 <th className="px-3 py-2.5">Elexon (GW)</th>
                 <th className="px-3 py-2.5">Safe Estimate (GW)</th>
                 <th className="px-3 py-2.5">Applied Margin (GW)</th>
-                <th className="px-3 py-2.5">Indicative Range (GW)</th>
+                <th className="px-3 py-2.5">Typical Error Range (GW)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white font-mono">
@@ -191,11 +190,11 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ intervals, targetD
                 <tr key={int.interval_start} className="hover:bg-slate-50">
                   <td className="px-3 py-2 font-medium text-slate-500">{int.settlement_period}</td>
                   <td className="px-3 py-2 text-slate-900">{int.interval_start.substring(11, 16)}</td>
-                  <td className="px-3 py-2 text-sky-700 font-semibold">{int.elexon_forecast_gw.toFixed(3)}</td>
-                  <td className="px-3 py-2 text-slate-900 font-bold">{int.safe_estimate_gw.toFixed(3)}</td>
-                  <td className="px-3 py-2 text-amber-700">-{int.applied_margin_gw.toFixed(3)}</td>
+                  <td className="px-3 py-2 text-sky-700 font-semibold">{int.elexon_forecast_gw.toFixed(1)}</td>
+                  <td className="px-3 py-2 text-slate-900 font-bold">{int.safe_estimate_gw.toFixed(1)}</td>
+                  <td className="px-3 py-2 text-amber-700">-{int.applied_margin_gw.toFixed(1)}</td>
                   <td className="px-3 py-2 text-slate-600">
-                    [{int.indicative_lower_gw.toFixed(3)} – {int.indicative_upper_gw.toFixed(3)}]
+                    [{int.indicative_lower_gw.toFixed(1)} – {int.indicative_upper_gw.toFixed(1)}]
                   </td>
                 </tr>
               ))}
@@ -204,9 +203,8 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ intervals, targetD
         </div>
       )}
 
-      <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500">
-        <span>Units: Gigawatts (GW). Displayed error band shows 10th–90th historical error quantiles.</span>
-        <span className="font-mono text-[11px] text-slate-400">Strictly no target-day actual leakage</span>
+      <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2">
+        <span>Units: Gigawatts (GW). Displayed band shows typical error range from the last 48h of outturn (see Methodology).</span>
       </div>
     </div>
   );

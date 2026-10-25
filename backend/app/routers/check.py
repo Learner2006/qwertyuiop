@@ -3,6 +3,7 @@ Evaluates both Elexon forecast and safe estimate against actual wind generation 
 """
 
 import datetime
+import numpy as np
 from fastapi import APIRouter, HTTPException, Query
 
 from app.config import settings
@@ -66,6 +67,22 @@ def get_check(
         
         # 5. Compute evaluation metrics
         metrics_res = compute_reliability_metrics(calib_res, actual_records)
+
+        # 6. Compute v2 proportional metrics
+        if calibration_records:
+            pct_errs = [(r["error_gw"] / r["forecast_gw"]) for r in calibration_records]
+            w_ratio = min(1.0, len(calibration_records) / 96.0)
+            q_ratio = max(0.0, float(np.percentile(pct_errs, percentile)))
+            v2_ratio = (1.0 - w_ratio) * 0.15 + w_ratio * q_ratio
+        else:
+            v2_ratio = 0.15
+            
+        v2_plans = [max(0.0, f["generation_gw"] * (1.0 - v2_ratio)) for f in raw_forecast_records]
+        v2_headline_gw = round(float(np.mean(v2_plans)), 4) if v2_plans else 0.0
+        v2_sf_mwh = sum(max(0.0, s - a["generation_gw"]) * 500.0 for s, a in zip(v2_plans, actual_records))
+        v2_surplus_mwh = sum(max(0.0, a["generation_gw"] - s) * 500.0 for s, a in zip(v2_plans, actual_records))
+        v2_saved_sf_mwh = metrics_res["elexon_shortfall_mwh"] - v2_sf_mwh
+        v2_inc_surplus_mwh = v2_surplus_mwh - metrics_res["elexon_surplus_mwh"]
         
         cutoff_utc_str = f"{dec_date.isoformat()}T{settings.DECISION_CUTOFF_HOUR_UTC:02d}:{settings.DECISION_CUTOFF_MINUTE_UTC:02d}:00Z"
         
@@ -82,7 +99,16 @@ def get_check(
             elexon_shortfall_mwh=metrics_res["elexon_shortfall_mwh"],
             safe_shortfall_mwh=metrics_res["safe_shortfall_mwh"],
             saved_shortfall_mwh=metrics_res["saved_shortfall_mwh"],
+            elexon_surplus_mwh=metrics_res["elexon_surplus_mwh"],
+            safe_surplus_mwh=metrics_res["safe_surplus_mwh"],
+            incremental_surplus_mwh=metrics_res["incremental_surplus_mwh"],
             extra_advance_planned_mwh=metrics_res["extra_advance_planned_mwh"],
+            v2_safe_headline_gw=v2_headline_gw,
+            v2_safe_shortfall_mwh=round(v2_sf_mwh, 1),
+            v2_saved_shortfall_mwh=round(v2_saved_sf_mwh, 1),
+            v2_safe_surplus_mwh=round(v2_surplus_mwh, 1),
+            v2_incremental_surplus_mwh=round(v2_inc_surplus_mwh, 1),
+            v2_ratio=round(v2_ratio, 4),
             elexon_mae_gw=metrics_res["elexon_mae_gw"],
             safe_mae_gw=metrics_res["safe_mae_gw"],
             indicative_range_coverage=metrics_res["indicative_range_coverage"],

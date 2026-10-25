@@ -156,7 +156,7 @@ export const ForecastVsActualChart: React.FC<ForecastVsActualChartProps> = ({
 
               {/* Indicative Range Area */}
               <Area
-                type="monotone"
+                type="linear"
                 dataKey="indicativeRange"
                 name="Indicative Range"
                 fill="#f0f9ff"
@@ -167,7 +167,7 @@ export const ForecastVsActualChart: React.FC<ForecastVsActualChartProps> = ({
 
               {/* Actual Wind Generation Line */}
               <Line
-                type="monotone"
+                type="linear"
                 dataKey="actualGeneration"
                 name="Actual Wind Generation"
                 stroke="#059669"
@@ -178,7 +178,7 @@ export const ForecastVsActualChart: React.FC<ForecastVsActualChartProps> = ({
 
               {/* Elexon Raw Forecast Line */}
               <Line
-                type="monotone"
+                type="linear"
                 dataKey="elexonForecast"
                 name="Elexon Forecast"
                 stroke="#0284c7"
@@ -189,7 +189,7 @@ export const ForecastVsActualChart: React.FC<ForecastVsActualChartProps> = ({
 
               {/* Our Safe Estimate Line */}
               <Line
-                type="monotone"
+                type="linear"
                 dataKey="safeEstimate"
                 name="Our Safe Estimate"
                 stroke="#0f172a"

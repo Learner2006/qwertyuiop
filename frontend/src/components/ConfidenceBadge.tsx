@@ -25,30 +25,46 @@ export const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({
     }
   };
 
-  const getMethodologyDescription = () => {
-    if (methodologyType === "cold_start") {
-      return "Cold-start: 15% fixed haircut applied (0 historical observations in January 2026 lookback)";
+  const getBadgeLabel = () => {
+    switch (label) {
+      case "High":
+        return "Full history (48h)";
+      case "Medium":
+        return `Partial history (${observationsCount}/96 slots)`;
+      case "Low":
+      default:
+        return observationsCount === 0
+          ? "No history (Cold start 15%)"
+          : `Limited history (${observationsCount}/96 slots)`;
     }
-    if (methodologyType === "blended") {
-      const pct = Math.round(historyWeight * 100);
-      return `Blended calibration: ${pct}% empirical error margin, ${100 - pct}% cold-start haircut`;
-    }
-    return "Data-driven: 100% empirical signed-error percentile margin from 96 historical half-hourly observations (48h lookback)";
   };
 
+  const getMethodologyDescription = () => {
+    if (methodologyType === "cold_start" || observationsCount === 0) {
+      return "Cold-start: using fixed 15% haircut (0 half-hours available).";
+    }
+    if (methodologyType === "blended" || observationsCount < 96) {
+      const pct = Math.round(historyWeight * 100);
+      return `Blended calibration: ${pct}% data-driven margin (w = min(1.0, ${observationsCount}/96)), ${100 - pct}% fixed 15% haircut.`;
+    }
+    return "Data-driven: 100% empirical error quantiles from previous 48h (see Methodology).";
+  };
+
+  const hours = Math.round(observationsCount / 2);
+
   return (
-    <div className="flex flex-col space-y-1">
-      <div className="flex items-center space-x-2">
+    <div className="flex flex-col space-y-1.5">
+      <div className="flex flex-wrap items-center gap-2">
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getBadgeStyle()}`}
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getBadgeStyle()}`}
         >
-          {label} Calibration Coverage
+          {getBadgeLabel()}
         </span>
-        <span className="text-xs text-slate-500 font-mono">
-          {observationsCount} / 96 observations
+        <span className="text-xs text-slate-700 font-mono font-medium">
+          History used: {observationsCount} of 96 half-hours ({hours}h)
         </span>
       </div>
-      <p className="text-xs text-slate-500 italic">
+      <p className="text-xs text-slate-500 leading-relaxed">
         {getMethodologyDescription()}
       </p>
     </div>

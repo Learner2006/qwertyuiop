@@ -1,7 +1,7 @@
 """Reliability metrics engine for the Wind Day-Ahead Estimator.
 Calculates half-hourly and aggregated daily energy shortfall (MWh),
-saved shortfall energy, additional advance-planned energy, MAE (GW),
-and empirical range coverage.
+saved shortfall energy, Elexon surplus vs our surplus (incremental advance planned wind),
+MAE (GW), and empirical range coverage.
 """
 
 from typing import Dict, List
@@ -28,7 +28,10 @@ def compute_reliability_metrics(
     check_intervals = []
     total_elexon_sf = 0.0
     total_safe_sf = 0.0
-    total_extra_adv = 0.0
+    total_elexon_surplus = 0.0
+    total_safe_surplus = 0.0
+    total_inc_surplus = 0.0
+    
     elexon_abs_errors = []
     safe_abs_errors = []
     in_range_count = 0
@@ -51,12 +54,16 @@ def compute_reliability_metrics(
         safe_sf = max(0.0, s_gw - a_gw) * mw_factor
         diff_sf = elex_sf - safe_sf
         
-        # Extra advance planned: actual wind above safe estimate
-        extra_adv = max(0.0, a_gw - s_gw) * mw_factor
+        # Surplus: max(0, Actual - Planned) * 1000 * 0.5
+        elex_surplus = max(0.0, a_gw - f_gw) * mw_factor
+        safe_surplus = max(0.0, a_gw - s_gw) * mw_factor
+        inc_surplus = safe_surplus - elex_surplus
 
         total_elexon_sf += elex_sf
         total_safe_sf += safe_sf
-        total_extra_adv += extra_adv
+        total_elexon_surplus += elex_surplus
+        total_safe_surplus += safe_surplus
+        total_inc_surplus += inc_surplus
 
         elexon_abs_errors.append(abs(f_gw - a_gw))
         safe_abs_errors.append(abs(s_gw - a_gw))
@@ -76,6 +83,9 @@ def compute_reliability_metrics(
             "elexon_shortfall_mwh": round(elex_sf, 2),
             "safe_shortfall_mwh": round(safe_sf, 2),
             "saved_mwh": round(diff_sf, 2),
+            "elexon_surplus_mwh": round(elex_surplus, 2),
+            "safe_surplus_mwh": round(safe_surplus, 2),
+            "incremental_surplus_mwh": round(inc_surplus, 2),
             "is_elexon_shortfall": elex_sf > 1e-4,
             "is_safe_shortfall": safe_sf > 1e-4,
         })
@@ -95,10 +105,11 @@ def compute_reliability_metrics(
         headline_result = "Both methods produced the same shortfall energy on this target day."
 
     methodology_notes = [
-        "Historical replay using Elexon BMRS WINDFOR and FUELHH data for January 2026 (UTC).",
+        "Historical replay using Elexon WINDFOR and FUELHH data for January 2026 (UTC).",
         "Shortfall energy is calculated as max(0, planned - actual) * 1000 * 0.5 hours.",
         "Saved shortfall MWh is an avoided shortfall volume, not verified financial cash savings.",
-        "Additional advance-planned MWh measures actual wind above our safe estimate.",
+        "Elexon surplus and safe surplus represent realized wind generation above respective planned quantities.",
+        "Incremental surplus measures additional advance wind arranged by our cautious plan.",
         "Indicative error band is derived from historical errors and does not guarantee future generation."
     ]
 
@@ -107,7 +118,10 @@ def compute_reliability_metrics(
         "elexon_shortfall_mwh": round(total_elexon_sf, 1),
         "safe_shortfall_mwh": round(total_safe_sf, 1),
         "saved_shortfall_mwh": round(saved_total_sf, 1),
-        "extra_advance_planned_mwh": round(total_extra_adv, 1),
+        "elexon_surplus_mwh": round(total_elexon_surplus, 1),
+        "safe_surplus_mwh": round(total_safe_surplus, 1),
+        "incremental_surplus_mwh": round(total_inc_surplus, 1),
+        "extra_advance_planned_mwh": round(total_safe_surplus, 1),  # Backwards-compatible alias
         "elexon_mae_gw": round(elex_mae, 4),
         "safe_mae_gw": round(safe_mae, 4),
         "indicative_range_coverage": round(coverage, 4),

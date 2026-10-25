@@ -24,10 +24,26 @@ def test_summary_endpoint():
     assert resp.status_code == 200
     data = resp.json()
     assert data["decision_dates_count"] == 30
+    assert data["total_target_intervals"] == 1440
     assert data["total_elexon_shortfall_mwh"] > 1000000
     assert data["total_avoided_shortfall_mwh"] > 0
+    assert data["total_incremental_surplus_mwh"] > 0
     assert data["total_extra_advance_planned_mwh"] > 0
-    assert "Across Jan 2026" in data["summary_sentence"]
+    assert data["total_actual_wind_mwh"] > 8000000
+    assert data["elexon_overforecast_pct"] == pytest.approx(15.48, abs=0.1)
+    assert data["safe_efficiency_pct"] == pytest.approx(49.57, abs=0.2)
+    assert data["matched_flat_efficiency_pct"] == pytest.approx(60.56, abs=0.2)
+    assert data["breakeven_ratio"] == pytest.approx(1.02, abs=0.02)
+    assert data["cold_start_intervals"] == 144
+    assert data["mature_intervals"] == 1296
+    assert data["cold_start_avoided_shortfall_mwh"] > 100000
+    assert data["mature_avoided_shortfall_mwh"] > 800000
+    assert data["flat_15_benchmark"]["name"] == "Flat 15% Haircut"
+    assert data["flat_15_benchmark"]["avoided_shortfall_mwh"] > 1000000
+    assert data["rolling_mean_benchmark"]["name"] == "Rolling Mean Bias Correction"
+    assert len(data["percentile_sweep"]) == 7
+    assert len(data["flat_benchmarks"]) == 7
+    assert "Break-even: the cautious plan pays off if replacement power costs at least" in data["summary_sentence"]
 
 
 def test_estimate_endpoint_valid():
@@ -50,15 +66,15 @@ def test_estimate_endpoint_never_exposes_target_actuals():
     """Verify that estimate endpoint never discloses target-day actual outcomes."""
     resp = client.get("/api/estimate?date=2026-01-25&percentile=75")
     assert resp.status_code == 200
-    payload_str = resp.text.lower()
+    data = resp.json()
     
-    # Must not contain actual generation keys
-    assert "actual_generation" not in payload_str
-    assert "actual_headline" not in payload_str
-    assert "shortfall_mwh" not in payload_str
-    assert "extra_advance" not in payload_str
-    assert "mae_gw" not in payload_str
-    assert "range_coverage" not in payload_str
+    # Must not contain target-day actual generation keys or target evaluation outcomes
+    assert "actual_headline_gw" not in data
+    assert "range_coverage" not in data
+    for interval in data["intervals"]:
+        assert "actual_generation_gw" not in interval
+        assert "shortfall_mwh" not in interval
+        assert "saved_mwh" not in interval
 
 
 def test_check_endpoint_valid():
@@ -124,3 +140,45 @@ def test_invalid_percentiles():
     # Above max (90)
     resp = client.get("/api/estimate?date=2026-01-20&percentile=95")
     assert resp.status_code == 422 or resp.status_code == 400
+
+
+def test_estimate_deep_dive_fields():
+    resp = client.get("/api/estimate?date=2026-01-25&percentile=75")
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # Calculation step
+    assert "calculation" in data
+    calc = data["calculation"]
+    assert calc["elexon_day_ahead_avg_gw"] == pytest.approx(12.4, abs=0.1)
+    assert calc["historical_observations_count"] == 96
+    assert calc["error_margin_gw"] == pytest.approx(2.5, abs=0.1)
+    assert calc["safe_plan_gw"] == pytest.approx(9.9, abs=0.1)
+
+    # 48h history
+    assert "history_48h" in data
+    assert len(data["history_48h"]) == 96
+
+    # Error distribution
+    assert "error_distribution" in data
+    ed = data["error_distribution"]
+    assert ed["overforecast_count"] == 96
+    assert ed["overforecast_pct"] == 100.0
+    assert len(ed["histogram_bins"]) > 0
+
+    # Trade-offs
+    assert "slider_tradeoffs" in data
+    assert len(data["slider_tradeoffs"]) >= 3
+
+    # Completed track record (Jan 2 to Jan 24 = 23 days)
+    assert "completed_track_record" in data
+    ctr = data["completed_track_record"]
+    assert ctr["completed_days_count"] == 23
+    assert ctr["total_avoided_shortfall_mwh"] > 0
+    assert ctr["days_reduced_count"] == 23
+
+    # Provenance
+    assert "provenance" in data
+    prov = data["provenance"]
+    assert prov["freeze_cutoff_utc"] == "2026-01-25T09:00:00Z"
+    assert prov["forecast_revisions_count"] >= 1

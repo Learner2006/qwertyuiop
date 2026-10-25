@@ -6,6 +6,7 @@ import { DatePercentileBar } from "../components/DatePercentileBar";
 import { RangeComparisonChart } from "../components/RangeComparisonChart";
 import { ForecastVsActualChart } from "../components/ForecastVsActualChart";
 import { ShortfallComparisonBars } from "../components/ShortfallComparisonBars";
+import { ComparativeAnalysisSection } from "../components/ComparativeAnalysisSection";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 
 interface CheckPageProps {
@@ -148,6 +149,9 @@ export const CheckPage: React.FC<CheckPageProps> = ({
             targetDate={checkData.target_date}
           />
 
+          {/* Month-Wide Comparative Baselines & Policy Breakdown */}
+          <ComparativeAnalysisSection />
+
           {/* Methodology Notes Card */}
           <div className="bg-slate-50 rounded-xl border border-slate-200 p-6 text-xs text-slate-600 space-y-2">
             <h4 className="font-semibold text-slate-900 uppercase tracking-wider text-[11px]">
@@ -158,6 +162,9 @@ export const CheckPage: React.FC<CheckPageProps> = ({
                 <li key={idx}>{note}</li>
               ))}
             </ul>
+            <div className="mt-3 pt-3 border-t border-slate-200 text-[11px] text-slate-600 leading-relaxed">
+              <strong>Definitional Boundary Citation:</strong> Elexon dataset documentation defines <code className="bg-white px-1 py-0.5 rounded border border-slate-200">WINDFOR</code> as <em>"aggregates expected generation for wind farms that are visible to the ESO and possess operational metering"</em> (Elexon Insights Solution documentation for <code className="bg-white px-1 py-0.5 rounded border border-slate-200">/datasets/WINDFOR</code>), whereas <code className="bg-white px-1 py-0.5 rounded border border-slate-200">FUELHH</code> is <em>"derived from operational metering data for Balancing Mechanism Units (BMUs) connected directly to the transmission system"</em> (Elexon Insights Solution documentation for <code className="bg-white px-1 py-0.5 rounded border border-slate-200">/datasets/FUELHH</code>). Because transmission-connected BMUs account for roughly 82% to 85% of ESO-visible wind capacity (implying a gap of roughly 18% to 22% of FUELHH outturn), this definitional boundary likely explains much of the persistent ~13.4% level difference relative to forecast (~15.5% relative to FUELHH outturn) observed across January 2026. For an off-taker settling against transmission-metered FUELHH outturn, our calibration bridges this structural gap.
+            </div>
           </div>
         </>
       )}

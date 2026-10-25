@@ -140,8 +140,10 @@ class DataManager:
             tz="UTC"
         )
         
-        # Actuals available by cutoff
-        available_actuals = self._actuals_df[self._actuals_df["publish_time"] <= cutoff_dt]
+        # Actuals available by cutoff, factoring in explicit physical recording & publication lag
+        # Only intervals that concluded and published at least ACTUALS_PUBLICATION_LAG_HOURS before cutoff
+        actuals_available_cutoff = cutoff_dt - pd.Timedelta(hours=settings.ACTUALS_PUBLICATION_LAG_HOURS)
+        available_actuals = self._actuals_df[self._actuals_df["publish_time"] <= actuals_available_cutoff]
         
         # Match with canonical day-ahead forecast
         history = []
