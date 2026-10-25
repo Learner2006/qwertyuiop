@@ -84,3 +84,60 @@ Once the headline model is determined by the decision rule on the selection half
 2. The candidates are evaluated **exactly once** on the Holdout Window: January 16, 2026 09:00 UTC through January 30, 2026 09:00 UTC (15 decision days, 720 target half-hourly settlement periods targeting January 17 to January 31 delivery).
 3. The results on both the selection half and the holdout half are reported transparently in the final results table.
 4. No further tuning, adjustments, or model switches are permitted.
+
+---
+
+## 5. Candidate Evaluation Results & Model Selection Decision
+
+Generated via `python3 scripts/evaluate_models.py` on 2026-10-25.
+
+### 5.1 Selection Window Results (Jan 1–15 Decisions, 720 Settlement Intervals)
+* Raw Elexon: Forecast = 4,489,423.0 MWh, Actual = 3,954,087.0 MWh, Shortfall = 618,188.5 MWh
+
+| Candidate Model | Avoided Shortfall (MWh) | Incremental Extra (MWh) | Break-Even ($k^*$) | Efficiency (%) | Equal-Cost Positive Days | Qualification Status |
+|---|---|---|---|---|---|---|
+| `v1_additive` (p75) | 399,083.8 | 561,943.8 | 1.408× | 41.5% | 8 / 15 | Disqualified (< 90% threshold) |
+| `v2_proportional` (p75) | 432,786.6 | 376,780.8 | 0.871× | 53.5% | 8 / 15 | Qualified ($\ge 401,062.7$ MWh) |
+| **`flat_15` (15% Static)** | **445,625.2** | **227,788.3** | **0.511×** | **66.2%** | **9 / 15** | **Qualified & Winner (Highest Efficiency)** |
+| `expanding_ratio` | 388,447.7 | 191,390.0 | 0.493× | 67.0% | 9 / 15 | Disqualified (< 90% threshold) |
+
+**Decision Rule Application:**
+* Maximum Avoided Shortfall: $445,625.2$ MWh (`flat_15`).
+* 90% Qualification Threshold: $401,062.7$ MWh.
+* Qualified Candidates: `flat_15` (445.6k MWh) and `v2_proportional` (432.8k MWh).
+* Efficiency: `flat_15` achieves **66.2%** vs `v2_proportional` at **53.5%**.
+* **Selected Headline Model:** **`flat_15`**.
+
+---
+
+### 5.2 Single-Pass Holdout Evaluation (Jan 16–30 Decisions, 720 Settlement Intervals)
+* Evaluated strictly once following selection; zero hyperparameter tuning.
+* Raw Elexon: Forecast = 5,034,554.0 MWh, Actual = 4,293,054.5 MWh, Shortfall = 767,740.5 MWh
+
+| Candidate Model | Avoided Shortfall (MWh) | Incremental Extra (MWh) | Break-Even ($k^*$) | Efficiency (%) | Equal-Cost Positive Days |
+|---|---|---|---|---|---|
+| `v1_additive` (p75) | 569,819.7 | 423,584.2 | 0.743× | 57.4% | 9 / 15 |
+| `v2_proportional` (p75) | 589,841.5 | 529,197.3 | 0.897× | 52.7% | 10 / 15 |
+| **`flat_15` (Selected Headline)** | **571,037.0** | **184,146.1** | **0.322×** | **75.6%** | **13 / 15** |
+| `expanding_ratio` | 492,453.1 | 122,228.8 | 0.248× | 80.1% | 13 / 15 |
+
+---
+
+### 5.3 Full Month Performance (Jan 1–30 Decisions, 1,440 Settlement Intervals)
+* Raw Elexon: Forecast = 9,523,977.0 MWh, Actual = 8,247,141.5 MWh, Shortfall = 1,385,929.0 MWh
+
+| Model | Total Avoided Shortfall (MWh) | Total Extra Supply (MWh) | Break-Even Ratio | Efficiency (%) | Equal-Cost Positive Days |
+|---|---|---|---|---|---|
+| `v1_additive` (p75) | 968,903.4 | 985,528.0 | 1.017× | 49.6% | 17 / 30 |
+| `v2_proportional` (p75) | 1,022,628.1 | 905,978.1 | 0.886× | 53.0% | 18 / 30 |
+| **`flat_15` (Production Headline)** | **1,016,662.2** | **411,934.4** | **0.405×** | **71.2%** | **22 / 30** |
+| `expanding_ratio` | 880,900.8 | 313,618.8 | 0.356× | 73.8% | 22 / 30 |
+
+---
+
+## 6. Frozen Parameter Confirmation
+* **Headline Model:** `flat_15` (15% static uniform haircut).
+* **Percentile Controls:** Maintained as an optional caution slider on Estimate and Check pages (allowing user risk preferences: p60, p75, p85, p90) but documented honestly as an empirical risk adjustment rather than the primary source of the base structural haircut.
+* **Pre-selection Commit Hash:** `979d1ce`
+* **Frozen Protocol Commit:** (recorded in git log)
+
