@@ -145,8 +145,17 @@ For a decision made on date $D$ for target delivery date $D+1$:
 2. **Forecast Selection:** Selects the latest forecast vintage published strictly at or before 09:00 UTC on day $D$ covering intervals of target date $D+1$. Forecasts published after 09:00 UTC are strictly excluded.
 3. **Historical Calibration Selection:** Calibration uses only intervals where both the day-ahead forecast and actual generation were published at or before 09:00 UTC on day $D$.
 4. **No Future Leakage Guarantee:** Forecasts published and actuals recorded after 09:00 UTC on the decision day are never used. Verified by automated replay isolation tests (`test_no_leakage.py`).
-5. **Core Premise:** We assume replacement power bought close to delivery tends to cost more than power arranged in advance. We don’t model prices, so results are shown in MWh.
-6. **January 2026 Monthly Proof:** Across Jan 2026, planning with our estimate would have avoided 976,194 MWh of shortfall (and arranged 1,092,195 MWh extra in advance). Both sides are computed dynamically from backend metrics.
+5. **Core Premise:** We assume replacement power bought close to delivery tends to cost more than power arranged in advance. We don’t model market prices directly, so results are evaluated in physical MWh trade-offs and break-even price ratios.
+6. **January 2026 Model Benchmark Results:** Across 30 decision days (1,440 half-hours), all four candidate models evaluated under our pre-registered protocol (`docs/PROTOCOL.md`) achieved net-positive break-even performance:
+
+| Model | Status | Avoided Shortfall (MWh) | Incremental Extra (MWh) | Break-Even ($k^*$) | Equal-Cost Positive Days |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`flat_15`** | **Selected Production Headline (M3 Rule)** | **1,016,662 MWh** | **411,934 MWh** | **0.405×** | **22 / 30 days** |
+| `expanding_ratio` | Exploratory (Realization Ratio) | 880,901 MWh | 313,619 MWh | 0.356× | 22 / 30 days |
+| `v2_proportional` | Exploratory (Relative Error p75) | 1,022,628 MWh | 905,978 MWh | 0.886× | 18 / 30 days |
+| `v1_additive` | Pre-declared Baseline (p75) | 968,903 MWh | 985,528 MWh | 1.017× | 17 / 30 days |
+
+Raw Elexon forecast: 9,523,977 MWh vs 8,247,142 MWh actual outturn (+15.5% of outturn, +13.4% of forecast; raw shortfall: 1,385,929 MWh). Both sides (avoided shortfall and extra supply) are reported strictly from API calculations. Full selection protocol and holdout results are recorded in [`docs/PROTOCOL.md`](docs/PROTOCOL.md).
 
 ---
 
@@ -267,7 +276,14 @@ This runs:
 
 ## Docker & Deployment
 
-### Run Backend via Docker
+### Run Complete Application via Docker Compose (Recommended)
+```bash
+# Start both backend (port 8000) and frontend (port 3000)
+docker compose up --build
+```
+Access the application at `http://localhost:3000`.
+
+### Run Backend via Docker Standalone
 ```bash
 # Build Docker image
 docker build -t wind-day-ahead-backend -f backend/Dockerfile backend

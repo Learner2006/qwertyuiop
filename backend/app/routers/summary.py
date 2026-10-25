@@ -19,6 +19,7 @@ from app.schemas import (
 )
 from app.services.calibrate import calibrate_daily_forecast
 from app.services.metrics import compute_reliability_metrics
+from app.services.models import v2_proportional, flat_15, v1_additive
 from app.services.prepare import DataManager
 
 router = APIRouter(tags=["Summary"])
@@ -57,6 +58,7 @@ def get_month_summary(
     
     days_reduced = 0
     days_increased = 0
+    days_breakeven_count = 0
 
     # Early cold-start (Jan 1-3) vs mature (Jan 4-30) accumulators
     cs_avoided_sf = 0.0
@@ -131,6 +133,9 @@ def get_month_summary(
             days_reduced += 1
         elif day_saved < -0.05:
             days_increased += 1
+
+        if day_avoided > day_inc_surplus:
+            days_breakeven_count += 1
 
     total_avoided_sf = total_elexon_sf - total_safe_sf
     total_incremental_surplus = total_safe_surplus - total_elexon_surplus
@@ -294,23 +299,18 @@ def get_month_summary(
     daily_elex = []
     
     for day in days_data:
-        obs = day["calib_obs"]
-        n = len(obs)
-        w = min(1.0, n / 96.0)
-        pct_errs = [(o["error_gw"] / o["forecast_gw"]) for o in obs] if obs else []
-        q75 = max(0.0, float(np.percentile(pct_errs, 75.0))) if pct_errs else 0.15
-        applied_r = (1.0 - w) * 0.15 + w * q75
+        v2_res = v2_proportional(day["fc"], day["calib_obs"], 75.0)
+        v2_plans = v2_res["plans"]
         
         d_v1_sf, d_v1_surplus, d_v1_mae = 0.0, 0.0, 0.0
         d_v2_sf, d_v2_surplus, d_v2_mae = 0.0, 0.0, 0.0
         d_f15_sf, d_f15_surplus, d_f15_mae = 0.0, 0.0, 0.0
         d_elex_sf, d_elex_surplus, d_fc = 0.0, 0.0, 0.0
         
-        for f_item, s_item, a_item in zip(day["fc"], day["calib_res"]["intervals"], day["acts"]):
+        for f_item, s_item, a_item, s2 in zip(day["fc"], day["calib_res"]["intervals"], day["acts"], v2_plans):
             f = f_item["generation_gw"]
             a = a_item["generation_gw"]
             s1 = s_item["safe_estimate_gw"]
-            s2 = max(0.0, f * (1.0 - applied_r))
             sf15 = max(0.0, f * 0.85)
             
             d_fc += f * 500.0
@@ -483,6 +483,7 @@ def get_month_summary(
         flat_benchmarks=flat_benchmarks,
         days_shortfall_reduced=days_reduced,
         days_shortfall_increased=days_increased,
+        days_breakeven_count=days_breakeven_count,
         summary_sentence=sentence,
     )
     _summary_cache[percentile] = res

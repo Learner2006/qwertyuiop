@@ -57,8 +57,8 @@ export const EstimateFaq: React.FC<EstimateFaqProps> = ({ estimateData }) => {
           {faqOpen.faq1 && (
             <div className="p-4 bg-white text-xs sm:text-sm text-slate-700 leading-relaxed border-t border-slate-200 space-y-2">
               <p>
-                Because Elexon's forecast ran above FUELHH outturn in <strong>{error_distribution?.overforecast_pct || 100}%</strong> of the last 48 hours
-                ({error_distribution?.overforecast_count || historical_observations_count} of the last {historical_observations_count} half-hours), and this setting protects against the {selected_percentile}th signed-error percentile ({appliedMargin.toFixed(1)} GW).
+                Because Elexon's forecast ran above FUELHH outturn in <strong>{error_distribution?.overforecast_pct ?? 100}%</strong> of the last 48 hours
+                ({error_distribution?.overforecast_count ?? historical_observations_count} of the last {historical_observations_count} half-hours), and this setting protects against the {selected_percentile}th signed-error percentile ({appliedMargin.toFixed(1)} GW).
               </p>
               <p className="text-slate-500 text-xs">
                 When a buyer relies on unadjusted forecasts when forecasts run persistently above outturn, replacement power must be bought closer to delivery to cover the gap.

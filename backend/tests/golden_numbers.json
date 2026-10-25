@@ -1,0 +1,48 @@
+{
+  "full_month": {
+    "total_slots": 1440,
+    "raw_elexon": {
+      "forecast_mwh": 9523977.1,
+      "actual_mwh": 8247142.0,
+      "shortfall_mwh": 1385929.0
+    },
+    "v1_additive": {
+      "avoided_shortfall_mwh": 968903.5,
+      "extra_supply_mwh": 985528.0,
+      "breakeven_ratio": 1.017
+    },
+    "v2_proportional": {
+      "avoided_shortfall_mwh": 1022628.1,
+      "extra_supply_mwh": 905978.1,
+      "breakeven_ratio": 0.886
+    },
+    "flat_15": {
+      "avoided_shortfall_mwh": 1016662.2,
+      "extra_supply_mwh": 411934.4,
+      "breakeven_ratio": 0.405
+    }
+  },
+  "first_half": {
+    "total_slots": 720,
+    "raw_elexon": {
+      "forecast_mwh": 4489423.4,
+      "actual_mwh": 3954087.0,
+      "shortfall_mwh": 618188.0
+    },
+    "v1_additive": {
+      "avoided_shortfall_mwh": 399083.8,
+      "extra_supply_mwh": 561943.8,
+      "breakeven_ratio": 1.408
+    },
+    "v2_proportional": {
+      "avoided_shortfall_mwh": 432786.6,
+      "extra_supply_mwh": 376780.8,
+      "breakeven_ratio": 0.871
+    },
+    "flat_15": {
+      "avoided_shortfall_mwh": 445625.2,
+      "extra_supply_mwh": 227788.3,
+      "breakeven_ratio": 0.511
+    }
+  }
+}

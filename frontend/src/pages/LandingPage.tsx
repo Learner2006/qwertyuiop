@@ -239,7 +239,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               {/* Scope Caveat & Detailed Analysis Link */}
               <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 gap-3">
                 <p className="max-w-xl text-[11px] leading-relaxed text-slate-400">
-                  <strong>Scope caveat:</strong> Evaluated across one winter month (January 2026) with model parameters (48h lookback, p75 risk percentile, 15% cold start) established in advance. Replay uses an out-of-sample rolling window with strict 09:00 UTC daily cutoffs.
+                  <strong>Scope caveat:</strong> Evaluated across one winter month (January 2026) using models selected under a pre-registered protocol (docs/PROTOCOL.md) with strict 09:00 UTC daily cutoffs. A single month is a limited sample.
                 </p>
 
                 <button

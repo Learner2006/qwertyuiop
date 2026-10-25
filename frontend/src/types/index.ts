@@ -121,6 +121,7 @@ export interface MonthSummaryResponse {
 
   days_shortfall_reduced: number;
   days_shortfall_increased: number;
+  days_breakeven_count?: number;
   summary_sentence: string;
 }
 
@@ -234,6 +235,12 @@ export interface EstimateResponse {
   safe_headline_gw: number;
   v2_safe_headline_gw?: number;
   v2_ratio?: number;
+  flat15_safe_headline_gw?: number;
+  flat15_safe_shortfall_mwh?: number;
+  flat15_saved_shortfall_mwh?: number;
+  flat15_safe_surplus_mwh?: number;
+  flat15_incremental_surplus_mwh?: number;
+  flat15_ratio?: number;
   indicative_lower_headline_gw: number;
   indicative_upper_headline_gw: number;
   confidence_label: "Low" | "Medium" | "High";
@@ -292,6 +299,12 @@ export interface CheckResponse {
   v2_safe_surplus_mwh?: number;
   v2_incremental_surplus_mwh?: number;
   v2_ratio?: number;
+  flat15_safe_headline_gw?: number;
+  flat15_safe_shortfall_mwh?: number;
+  flat15_saved_shortfall_mwh?: number;
+  flat15_safe_surplus_mwh?: number;
+  flat15_incremental_surplus_mwh?: number;
+  flat15_ratio?: number;
   elexon_mae_gw: number;
   safe_mae_gw: number;
   indicative_range_coverage: number;

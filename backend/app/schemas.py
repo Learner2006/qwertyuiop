@@ -129,6 +129,7 @@ class MonthSummaryResponse(BaseModel):
     
     days_shortfall_reduced: int
     days_shortfall_increased: int
+    days_breakeven_count: int = 0
     summary_sentence: str
 
 
@@ -317,6 +318,14 @@ class CheckResponse(BaseModel):
     v2_safe_surplus_mwh: Optional[float] = None
     v2_incremental_surplus_mwh: Optional[float] = None
     v2_ratio: Optional[float] = None
+
+    # flat 15% baseline metrics
+    flat15_safe_headline_gw: Optional[float] = None
+    flat15_safe_shortfall_mwh: Optional[float] = None
+    flat15_saved_shortfall_mwh: Optional[float] = None
+    flat15_safe_surplus_mwh: Optional[float] = None
+    flat15_incremental_surplus_mwh: Optional[float] = None
+    flat15_ratio: Optional[float] = 0.15
     
     # Accuracy & coverage
     elexon_mae_gw: float

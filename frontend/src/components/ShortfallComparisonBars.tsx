@@ -7,23 +7,35 @@ interface ShortfallComparisonBarsProps {
 }
 
 export const ShortfallComparisonBars: React.FC<ShortfallComparisonBarsProps> = ({ checkData }) => {
-  const [modelMode, setModelMode] = React.useState<"v1" | "v2">("v1");
+  const [modelMode, setModelMode] = React.useState<"flat15" | "v1" | "v2">("flat15");
 
-  const effectiveSafeShortfall = modelMode === "v2" && checkData.v2_safe_shortfall_mwh !== undefined
-    ? checkData.v2_safe_shortfall_mwh
-    : checkData.safe_shortfall_mwh;
+  const effectiveSafeShortfall =
+    modelMode === "flat15" && checkData.flat15_safe_shortfall_mwh !== undefined
+      ? checkData.flat15_safe_shortfall_mwh
+      : modelMode === "v2" && checkData.v2_safe_shortfall_mwh !== undefined
+      ? checkData.v2_safe_shortfall_mwh
+      : checkData.safe_shortfall_mwh;
 
-  const effectiveSavedShortfall = modelMode === "v2" && checkData.v2_saved_shortfall_mwh !== undefined
-    ? checkData.v2_saved_shortfall_mwh
-    : checkData.saved_shortfall_mwh;
+  const effectiveSavedShortfall =
+    modelMode === "flat15" && checkData.flat15_saved_shortfall_mwh !== undefined
+      ? checkData.flat15_saved_shortfall_mwh
+      : modelMode === "v2" && checkData.v2_saved_shortfall_mwh !== undefined
+      ? checkData.v2_saved_shortfall_mwh
+      : checkData.saved_shortfall_mwh;
 
-  const effectiveSafeSurplus = modelMode === "v2" && checkData.v2_safe_surplus_mwh !== undefined
-    ? checkData.v2_safe_surplus_mwh
-    : (checkData.safe_surplus_mwh ?? checkData.extra_advance_planned_mwh);
+  const effectiveSafeSurplus =
+    modelMode === "flat15" && checkData.flat15_safe_surplus_mwh !== undefined
+      ? checkData.flat15_safe_surplus_mwh
+      : modelMode === "v2" && checkData.v2_safe_surplus_mwh !== undefined
+      ? checkData.v2_safe_surplus_mwh
+      : (checkData.safe_surplus_mwh ?? checkData.extra_advance_planned_mwh);
 
-  const effectiveIncrementalSurplus = modelMode === "v2" && checkData.v2_incremental_surplus_mwh !== undefined
-    ? checkData.v2_incremental_surplus_mwh
-    : Math.max(0, (checkData.safe_surplus_mwh ?? checkData.extra_advance_planned_mwh) - (checkData.elexon_surplus_mwh ?? 0));
+  const effectiveIncrementalSurplus =
+    modelMode === "flat15" && checkData.flat15_incremental_surplus_mwh !== undefined
+      ? checkData.flat15_incremental_surplus_mwh
+      : modelMode === "v2" && checkData.v2_incremental_surplus_mwh !== undefined
+      ? checkData.v2_incremental_surplus_mwh
+      : Math.max(0, (checkData.safe_surplus_mwh ?? checkData.extra_advance_planned_mwh) - (checkData.elexon_surplus_mwh ?? 0));
 
   const {
     elexon_shortfall_mwh,
@@ -31,7 +43,6 @@ export const ShortfallComparisonBars: React.FC<ShortfallComparisonBarsProps> = (
     elexon_mae_gw,
     safe_mae_gw,
     indicative_range_coverage,
-    headline_result,
   } = checkData;
 
   const safe_shortfall_mwh = effectiveSafeShortfall;
@@ -50,43 +61,60 @@ export const ShortfallComparisonBars: React.FC<ShortfallComparisonBarsProps> = (
   const isSavedPositive = saved_shortfall_mwh > 0;
   const isSavedNegative = saved_shortfall_mwh < 0;
 
+  const dynamicHeadline =
+    isSavedPositive
+      ? `Our plan avoided ${Math.round(saved_shortfall_mwh).toLocaleString()} MWh of shortfall while requiring ${Math.round(displayIncrementalSurplus).toLocaleString()} MWh of incremental extra supply.`
+      : isSavedNegative
+      ? `Our plan increased shortfall by ${Math.round(Math.abs(saved_shortfall_mwh)).toLocaleString()} MWh while requiring ${Math.round(displayIncrementalSurplus).toLocaleString()} MWh of incremental extra supply.`
+      : `Both methods produced the same shortfall energy, requiring ${Math.round(displayIncrementalSurplus).toLocaleString()} MWh of incremental extra supply.`;
+
   return (
     <div className="space-y-6 mb-8">
-      {/* Model Version Selector (v1 Declared vs v2 Proportional) */}
-      {checkData.v2_saved_shortfall_mwh !== undefined && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-100 rounded-xl border border-slate-200">
-          <div className="text-xs">
-            <span className="font-bold text-slate-900 block">Evaluated Model Specification:</span>
-            <span className="text-slate-500">
-              {modelMode === "v1"
-                ? "v1: Original declared model (48h error quantile floored at 0)."
-                : `v2: Proportional margin model (${((checkData.v2_ratio || 0.15) * 100).toFixed(1)}% cut).`}
-            </span>
-          </div>
-          <div className="inline-flex rounded-lg bg-white p-0.5 border border-slate-200 text-xs font-semibold shrink-0">
-            <button
-              onClick={() => setModelMode("v1")}
-              className={`px-3 py-1.5 rounded-md transition-colors ${
-                modelMode === "v1"
-                  ? "bg-sky-600 text-white shadow-2xs font-bold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              v1 (Additive p75)
-            </button>
-            <button
-              onClick={() => setModelMode("v2")}
-              className={`px-3 py-1.5 rounded-md transition-colors ${
-                modelMode === "v2"
-                  ? "bg-sky-600 text-white shadow-2xs font-bold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              v2 (Proportional p75)
-            </button>
-          </div>
+      {/* Model Version Selector (flat15 Headline vs v1 Declared vs v2 Proportional) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-100 rounded-xl border border-slate-200">
+        <div className="text-xs">
+          <span className="font-bold text-slate-900 block">Evaluated Model Specification:</span>
+          <span className="text-slate-500">
+            {modelMode === "flat15"
+              ? "Flat 15% Baseline: Pre-registered headline model (15% uniform haircut)."
+              : modelMode === "v1"
+              ? "v1: Original declared model (48h signed-error quantile floored at 0)."
+              : `v2: Proportional margin model (${(((checkData.v2_ratio ?? 0.15)) * 100).toFixed(1)}% cut).`}
+          </span>
         </div>
-      )}
+        <div className="inline-flex rounded-lg bg-white p-0.5 border border-slate-200 text-xs font-semibold shrink-0">
+          <button
+            onClick={() => setModelMode("flat15")}
+            className={`px-3 py-1.5 rounded-md transition-colors ${
+              modelMode === "flat15"
+                ? "bg-sky-600 text-white shadow-2xs font-bold"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            Flat 15% (Headline)
+          </button>
+          <button
+            onClick={() => setModelMode("v1")}
+            className={`px-3 py-1.5 rounded-md transition-colors ${
+              modelMode === "v1"
+                ? "bg-sky-600 text-white shadow-2xs font-bold"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            v1 (Additive p75)
+          </button>
+          <button
+            onClick={() => setModelMode("v2")}
+            className={`px-3 py-1.5 rounded-md transition-colors ${
+              modelMode === "v2"
+                ? "bg-sky-600 text-white shadow-2xs font-bold"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            v2 (Proportional p75)
+          </button>
+        </div>
+      </div>
 
       {/* Dynamic Headline Result Banner */}
       <div
@@ -107,7 +135,7 @@ export const ShortfallComparisonBars: React.FC<ShortfallComparisonBarsProps> = (
         </div>
         <div>
           <h3 className="text-base font-bold tracking-tight">
-            {headline_result}
+            {dynamicHeadline}
           </h3>
           <p className="text-xs opacity-85 mt-1 leading-relaxed">
             Avoided shortfall energy comparison based on historical Elexon FUELHH outturn replay. This evaluates physical energy exposure (MWh), not cash savings.
@@ -148,7 +176,7 @@ export const ShortfallComparisonBars: React.FC<ShortfallComparisonBarsProps> = (
             {/* Our Safe Estimate Shortfall Bar */}
             <div>
               <div className="flex justify-between items-center text-xs mb-1.5 font-medium">
-                <span className="text-slate-700 font-semibold">{modelMode === "v2" ? "v2 Cautious Shortfall:" : "v1 Cautious Shortfall:"}</span>
+                <span className="text-slate-700 font-semibold">{modelMode === "flat15" ? "Flat 15% Shortfall:" : modelMode === "v2" ? "v2 Cautious Shortfall:" : "v1 Cautious Shortfall:"}</span>
                 <span className="font-mono font-bold text-slate-900 text-sm">
                   {Math.round(safe_shortfall_mwh).toLocaleString()} MWh
                 </span>
@@ -215,7 +243,7 @@ export const ShortfallComparisonBars: React.FC<ShortfallComparisonBarsProps> = (
             {/* Our Safe Estimate Surplus Bar */}
             <div>
               <div className="flex justify-between items-center text-xs mb-1.5 font-medium">
-                <span className="text-slate-700 font-semibold">{modelMode === "v2" ? "v2 Plan Surplus:" : "v1 Plan Surplus:"}</span>
+                <span className="text-slate-700 font-semibold">{modelMode === "flat15" ? "Flat 15% Surplus:" : modelMode === "v2" ? "v2 Plan Surplus:" : "v1 Plan Surplus:"}</span>
                 <span className="font-mono font-bold text-slate-900 text-sm">
                   {Math.round(safe_surplus_mwh).toLocaleString()} MWh
                 </span>

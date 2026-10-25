@@ -218,10 +218,10 @@ export const EstimatePage: React.FC<EstimatePageProps> = ({
                 <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-medium">Post-v1 Variant</span>
               </div>
               <div className="text-xl font-bold font-mono text-slate-900">
-                {(estimateData.v2_safe_headline_gw || (estimateData.elexon_headline_gw * (1 - (estimateData.v2_ratio || 0.1412)))).toFixed(1)} GW
+                {(estimateData.v2_safe_headline_gw ?? (estimateData.elexon_headline_gw * (1 - (estimateData.v2_ratio ?? 0.15)))).toFixed(1)} GW
               </div>
               <p className="text-[11px] text-slate-600 leading-normal">
-                Scales margin proportionally ({((estimateData.v2_ratio || 0.1412) * 100).toFixed(1)}% cut). Formulated after observing v1's high additive cuts during calm weather transitions (e.g. Jan 13–14).
+                Scales margin proportionally ({(((estimateData.v2_ratio ?? 0.15)) * 100).toFixed(1)}% cut). Formulated after observing v1's high additive cuts during calm weather transitions (e.g. Jan 13–14).
               </p>
             </div>
           </div>
@@ -296,7 +296,7 @@ export const EstimatePage: React.FC<EstimatePageProps> = ({
                       ? "No calibration history available before decision cutoff (cold start); applying a fixed 15% margin."
                       : estimateData.error_distribution?.overforecast_pct === 100.0
                       ? `Elexon's forecast ran above FUELHH outturn in all of the last ${estimateData.historical_observations_count} half-hours (100% of calibration observations before the ${decisionDateFormatted} cutoff ran above metered actuals), which widens the cautionary margin.`
-                      : `Elexon's forecast ran above FUELHH outturn in ${estimateData.error_distribution?.overforecast_count || 0} of the last ${estimateData.historical_observations_count} half-hours (${estimateData.error_distribution?.overforecast_pct || 0}% of calibration observations before the ${decisionDateFormatted} cutoff), which informs the cautionary margin.`}
+                      : `Elexon's forecast ran above FUELHH outturn in ${estimateData.error_distribution?.overforecast_count ?? 0} of the last ${estimateData.historical_observations_count} half-hours (${estimateData.error_distribution?.overforecast_pct ?? 0}% of calibration observations before the ${decisionDateFormatted} cutoff), which informs the cautionary margin.`}
                   </p>
                 </div>
                 <div className="pt-2 border-t border-sky-200/80 flex items-center space-x-1.5 text-[11px] font-mono text-sky-900">

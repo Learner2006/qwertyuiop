@@ -11,8 +11,13 @@ import pytest
 import pandas as pd
 
 from app.config import settings
+from app.main import app
 from app.services.calibrate import calibrate_daily_forecast
 from app.services.prepare import DataManager
+from fastapi.testclient import TestClient
+import app.routers.estimate as estimate_router
+
+client = TestClient(app)
 
 
 @pytest.fixture
@@ -171,3 +176,65 @@ def test_leakage_5_replay_invariant_to_future_dataset_expansion(real_data_manage
     est2 = calibrate_daily_forecast(fcs2, hist2, percentile=80.0)
 
     assert est1 == est2
+
+
+def test_leakage_6_all_30_dates_invariant_to_post_cutoff_truncation(real_data_manager):
+    """Test 6: For every decision date D in Jan 1-30, no field in the estimate response
+    depends on data published after cutoff. Truncating the dataset after cutoff produces
+    identical responses."""
+    orig_fcs = real_data_manager._forecasts_df.copy()
+    orig_acts = real_data_manager._actuals_df.copy()
+
+    try:
+        for d in range(1, 31):
+            date_str = f"2026-01-{d:02d}"
+            # Restore full dataset
+            real_data_manager._forecasts_df = orig_fcs.copy()
+            real_data_manager._actuals_df = orig_acts.copy()
+            real_data_manager._precompute_day_ahead_forecasts()
+            estimate_router._daily_inputs_cache.clear()
+
+            # Baseline response on full month data
+            resp_full = client.get(f"/api/estimate?date={date_str}&percentile=75.0")
+            assert resp_full.status_code == 200
+            r_base = resp_full.json()
+
+            # Truncate to cutoff for decision date d
+            cutoff_str = f"2026-01-{d:02d}T09:00:00Z"
+            real_data_manager._forecasts_df = orig_fcs[orig_fcs["publish_time"] <= cutoff_str].copy()
+            real_data_manager._actuals_df = orig_acts[orig_acts["publish_time"] <= cutoff_str].copy()
+            real_data_manager._precompute_day_ahead_forecasts()
+            estimate_router._daily_inputs_cache.clear()
+
+            resp_trunc = client.get(f"/api/estimate?date={date_str}&percentile=75.0")
+            assert resp_trunc.status_code == 200
+            r_trunc = resp_trunc.json()
+
+            assert r_base["elexon_headline_gw"] == r_trunc["elexon_headline_gw"]
+            assert r_base["safe_headline_gw"] == r_trunc["safe_headline_gw"]
+            assert r_base["slider_tradeoffs"] == r_trunc["slider_tradeoffs"]
+            assert r_base["completed_track_record"] == r_trunc["completed_track_record"]
+            assert r_base["error_distribution"] == r_trunc["error_distribution"]
+            assert r_base["calculation"] == r_trunc["calculation"]
+            assert r_base["history_48h"] == r_trunc["history_48h"]
+            assert r_base["intervals"] == r_trunc["intervals"]
+    finally:
+        real_data_manager._forecasts_df = orig_fcs
+        real_data_manager._actuals_df = orig_acts
+        real_data_manager._precompute_day_ahead_forecasts()
+        estimate_router._daily_inputs_cache.clear()
+
+
+def test_leakage_7_maximum_completed_delivery_day_is_d_minus_1():
+    """Test 7: The maximum completed delivery day in the track record is strictly D-1."""
+    for d in range(1, 31):
+        date_str = f"2026-01-{d:02d}"
+        resp = client.get(f"/api/estimate?date={date_str}&percentile=75.0")
+        assert resp.status_code == 200
+        tr = resp.json()["completed_track_record"]
+        if tr["completed_days_count"] > 0:
+            max_target = max(rec["target_date"] for rec in tr["daily_records"])
+            assert max_target == f"2026-01-{d-1:02d}"
+        else:
+            assert d in (1, 2)
+

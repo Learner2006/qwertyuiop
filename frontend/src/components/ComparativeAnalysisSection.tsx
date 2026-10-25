@@ -149,33 +149,52 @@ export const ComparativeAnalysisSection: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
-                      <tr className="bg-sky-50/70 font-semibold">
-                        <td className="py-2 px-3 font-sans text-sky-950">★ v2 (Proportional p75) [Out-of-Sample]</td>
-                        <td className="py-2 px-3 text-right text-slate-700">1,119,038 MWh (22.2%)</td>
-                        <td className="py-2 px-3 text-right text-emerald-700 font-bold">+589,841 MWh</td>
-                        <td className="py-2 px-3 text-right text-slate-900">+529,197 MWh</td>
-                        <td className="py-2 px-3 text-right text-sky-900 font-bold">52.7%</td>
-                        <td className="py-2 px-3 text-right text-sky-950 font-bold">0.897×</td>
-                        <td className="py-2 px-3 text-right text-slate-600">2.037 GW</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2 px-3 font-sans text-slate-800">v1 (Additive p75) [Original]</td>
-                        <td className="py-2 px-3 text-right text-slate-700">993,404 MWh (19.7%)</td>
-                        <td className="py-2 px-3 text-right text-emerald-700">+569,820 MWh</td>
-                        <td className="py-2 px-3 text-right text-slate-800">+423,584 MWh</td>
-                        <td className="py-2 px-3 text-right text-slate-800 font-semibold">57.4%</td>
-                        <td className="py-2 px-3 text-right text-slate-800">0.743×</td>
-                        <td className="py-2 px-3 text-right text-slate-600">1.799 GW</td>
-                      </tr>
-                      <tr className="bg-emerald-50/30">
-                        <td className="py-2 px-3 font-sans text-emerald-950 font-medium">Flat 15% Baseline</td>
-                        <td className="py-2 px-3 text-right text-slate-700">755,183 MWh (15.0%)</td>
-                        <td className="py-2 px-3 text-right text-emerald-700">+571,037 MWh</td>
-                        <td className="py-2 px-3 text-right text-slate-800">+184,146 MWh</td>
-                        <td className="py-2 px-3 text-right text-emerald-900 font-semibold">75.6%</td>
-                        <td className="py-2 px-3 text-right text-emerald-900">0.322×</td>
-                        <td className="py-2 px-3 text-right text-slate-600">1.131 GW</td>
-                      </tr>
+                      {[
+                        {
+                          name: "★ v2 (Proportional p75) [Out-of-Sample]",
+                          data: summaryData.second_half_v2,
+                          bgClass: "bg-sky-50/70 font-semibold",
+                          textClass: "text-sky-950 font-bold",
+                        },
+                        {
+                          name: "v1 (Additive p75) [Original]",
+                          data: summaryData.second_half_v1,
+                          bgClass: "",
+                          textClass: "text-slate-800 font-medium",
+                        },
+                        {
+                          name: "Flat 15% Baseline",
+                          data: summaryData.second_half_flat15,
+                          bgClass: "bg-emerald-50/30",
+                          textClass: "text-emerald-950 font-medium",
+                        },
+                      ].map((row, idx) => {
+                        const d = row.data;
+                        if (!d) return null;
+                        return (
+                          <tr key={idx} className={row.bgClass}>
+                            <td className={`py-2 px-3 font-sans ${row.textClass}`}>{row.name}</td>
+                            <td className="py-2 px-3 text-right text-slate-700">
+                              {Math.round(d.cut_volume_mwh).toLocaleString()} MWh ({d.cut_volume_pct.toFixed(1)}%)
+                            </td>
+                            <td className="py-2 px-3 text-right text-emerald-700 font-bold">
+                              +{Math.round(d.avoided_shortfall_mwh).toLocaleString()} MWh
+                            </td>
+                            <td className="py-2 px-3 text-right text-slate-900">
+                              +{Math.round(d.extra_supply_mwh).toLocaleString()} MWh
+                            </td>
+                            <td className="py-2 px-3 text-right text-sky-900 font-bold">
+                              {d.efficiency_pct.toFixed(1)}%
+                            </td>
+                            <td className="py-2 px-3 text-right font-bold">
+                              {d.breakeven_ratio.toFixed(3)}×
+                            </td>
+                            <td className="py-2 px-3 text-right text-slate-600">
+                              {d.mae_gw.toFixed(3)} GW
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -205,51 +224,72 @@ export const ComparativeAnalysisSection: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
-                      <tr className="bg-sky-50/70 font-semibold">
-                        <td className="py-2 px-3 font-sans text-sky-950">★ v2 (Proportional p75)</td>
-                        <td className="py-2 px-3 text-right text-slate-700">1,928,606 MWh (20.3%)</td>
-                        <td className="py-2 px-3 text-right text-emerald-700 font-bold">+1,022,628 MWh</td>
-                        <td className="py-2 px-3 text-right text-slate-900">+905,978 MWh</td>
-                        <td className="py-2 px-3 text-right text-sky-900 font-bold">53.0%</td>
-                        <td className="py-2 px-3 text-right text-sky-950 font-bold">0.886×</td>
-                        <td className="py-2 px-3 text-right text-slate-600">1.914 GW</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2 px-3 font-sans text-slate-800">v1 (Additive p75) [Declared]</td>
-                        <td className="py-2 px-3 text-right text-slate-700">1,954,431 MWh (20.5%)</td>
-                        <td className="py-2 px-3 text-right text-emerald-700">+968,904 MWh</td>
-                        <td className="py-2 px-3 text-right text-slate-800">+985,528 MWh</td>
-                        <td className="py-2 px-3 text-right text-slate-800 font-semibold">49.6%</td>
-                        <td className="py-2 px-3 text-right text-slate-800">1.017×</td>
-                        <td className="py-2 px-3 text-right text-slate-600">2.100 GW</td>
-                      </tr>
-                      <tr className="bg-emerald-50/30">
-                        <td className="py-2 px-3 font-sans text-emerald-950 font-medium">Flat 15% Baseline (Pre-Set)</td>
-                        <td className="py-2 px-3 text-right text-slate-700">1,428,597 MWh (15.0%)</td>
-                        <td className="py-2 px-3 text-right text-emerald-700 font-semibold">+1,016,662 MWh</td>
-                        <td className="py-2 px-3 text-right text-slate-800">+411,934 MWh</td>
-                        <td className="py-2 px-3 text-right text-emerald-900 font-bold">71.2%</td>
-                        <td className="py-2 px-3 text-right text-emerald-900 font-bold">0.405×</td>
-                        <td className="py-2 px-3 text-right text-slate-600">1.237 GW</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2 px-3 font-sans text-slate-700">Rolling Mean Ratio (e/f)</td>
-                        <td className="py-2 px-3 text-right text-slate-700">1,209,191 MWh (12.7%)</td>
-                        <td className="py-2 px-3 text-right text-emerald-700">+721,253 MWh</td>
-                        <td className="py-2 px-3 text-right text-slate-800">+487,938 MWh</td>
-                        <td className="py-2 px-3 text-right text-slate-700">59.6%</td>
-                        <td className="py-2 px-3 text-right text-slate-700">0.677×</td>
-                        <td className="py-2 px-3 text-right text-slate-600">1.752 GW</td>
-                      </tr>
-                      <tr>
-                        <td className="py-2 px-3 font-sans text-slate-700">Rolling Mean Bias (Additive GW)</td>
-                        <td className="py-2 px-3 text-right text-slate-700">1,272,782 MWh (13.4%)</td>
-                        <td className="py-2 px-3 text-right text-emerald-700">+691,365 MWh</td>
-                        <td className="py-2 px-3 text-right text-slate-800">+581,416 MWh</td>
-                        <td className="py-2 px-3 text-right text-slate-700">54.3%</td>
-                        <td className="py-2 px-3 text-right text-slate-700">0.841×</td>
-                        <td className="py-2 px-3 text-right text-slate-600">1.924 GW</td>
-                      </tr>
+                      {[
+                        {
+                          name: "★ v2 (Proportional p75)",
+                          data: summaryData.v2_proportional_benchmark,
+                          bgClass: "bg-sky-50/70 font-semibold",
+                          textClass: "text-sky-950 font-bold",
+                        },
+                        {
+                          name: "v1 (Additive p75) [Declared]",
+                          data: {
+                            cut_volume_mwh: summaryData.total_volume_cut_mwh,
+                            cut_volume_pct: (summaryData.total_volume_cut_mwh / (summaryData.total_elexon_forecast_mwh > 0 ? summaryData.total_elexon_forecast_mwh : 1)) * 100,
+                            avoided_shortfall_mwh: summaryData.total_avoided_shortfall_mwh,
+                            extra_supply_mwh: summaryData.total_incremental_surplus_mwh,
+                            efficiency_pct: summaryData.safe_efficiency_pct,
+                            breakeven_ratio: summaryData.breakeven_ratio,
+                            mae_gw: summaryData.safe_mae_gw,
+                          },
+                          bgClass: "",
+                          textClass: "text-slate-800 font-medium",
+                        },
+                        {
+                          name: "Flat 15% Baseline (Pre-Set)",
+                          data: summaryData.flat_15_benchmark,
+                          bgClass: "bg-emerald-50/30",
+                          textClass: "text-emerald-950 font-medium",
+                        },
+                        {
+                          name: "Rolling Mean Ratio (e/f)",
+                          data: summaryData.rolling_mean_ratio_benchmark,
+                          bgClass: "",
+                          textClass: "text-slate-700",
+                        },
+                        {
+                          name: "Rolling Mean Bias (Additive GW)",
+                          data: summaryData.rolling_mean_benchmark,
+                          bgClass: "",
+                          textClass: "text-slate-700",
+                        },
+                      ].map((row, idx) => {
+                        const d = row.data;
+                        if (!d) return null;
+                        return (
+                          <tr key={idx} className={row.bgClass}>
+                            <td className={`py-2 px-3 font-sans ${row.textClass}`}>{row.name}</td>
+                            <td className="py-2 px-3 text-right text-slate-700">
+                              {Math.round(d.cut_volume_mwh).toLocaleString()} MWh ({d.cut_volume_pct.toFixed(1)}%)
+                            </td>
+                            <td className="py-2 px-3 text-right text-emerald-700 font-bold">
+                              +{Math.round(d.avoided_shortfall_mwh).toLocaleString()} MWh
+                            </td>
+                            <td className="py-2 px-3 text-right text-slate-900">
+                              +{Math.round(d.extra_supply_mwh).toLocaleString()} MWh
+                            </td>
+                            <td className="py-2 px-3 text-right text-sky-900 font-bold">
+                              {d.efficiency_pct.toFixed(1)}%
+                            </td>
+                            <td className="py-2 px-3 text-right font-bold">
+                              {d.breakeven_ratio.toFixed(3)}×
+                            </td>
+                            <td className="py-2 px-3 text-right text-slate-600">
+                              {d.mae_gw.toFixed(3)} GW
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -268,14 +308,14 @@ export const ComparativeAnalysisSection: React.FC = () => {
                     <span className="font-bold text-slate-900 block font-sans">v1 Additive Model:</span>
                     <div>• Subtracted fixed ~5.6 GW from a 10 GW forecast (55% haircut)</div>
                     <div>• Shortfall: 0.0 MWh (0 of 48 slots)</div>
-                    <div>• Extra advance supply: <strong>+235,904 MWh</strong> across the 2 days</div>
+                    <div>• Extra advance supply: <strong>+236k MWh</strong> across the 2 days</div>
                     <div className="text-amber-800 font-semibold">• Break-even ratio: 7.62×</div>
                   </div>
                   <div className="p-3 bg-white rounded-lg border border-sky-200 bg-sky-50/40">
                     <span className="font-bold text-sky-950 block font-sans">v2 Proportional Model:</span>
                     <div>• Scaled cut to ~28–31% of current forecast (~2.8 GW margin)</div>
                     <div>• Shortfall: <strong>0.0 MWh (0 of 48 slots)</strong> — identical 100% protection!</div>
-                    <div>• Extra advance supply: <strong>+110,592 MWh</strong> (saved 125,312 MWh)</div>
+                    <div>• Extra advance supply: <strong>+111k MWh</strong> (saved ~125k MWh of excess hedging)</div>
                     <div className="text-emerald-800 font-bold">• Break-even ratio: 3.57×</div>
                   </div>
                 </div>
@@ -288,12 +328,12 @@ export const ComparativeAnalysisSection: React.FC = () => {
             <CostRatioCalculator
               avoidedMwhV1={summaryData.total_avoided_shortfall_mwh}
               extraMwhV1={summaryData.total_incremental_surplus_mwh}
-              avoidedMwhV2={summaryData.v2_proportional_benchmark?.avoided_shortfall_mwh || 1022627.7}
-              extraMwhV2={summaryData.v2_proportional_benchmark?.extra_supply_mwh || 905978.4}
+              avoidedMwhV2={summaryData.v2_proportional_benchmark?.avoided_shortfall_mwh}
+              extraMwhV2={summaryData.v2_proportional_benchmark?.extra_supply_mwh}
               avoidedMwhFlat15={summaryData.flat_15_benchmark.avoided_shortfall_mwh}
               extraMwhFlat15={summaryData.flat_15_benchmark.extra_supply_mwh}
               contextLabel="Full Month Replay (30 Decision Days, Jan 1–30)"
-              totalGenerationMwh={8247000}
+              totalGenerationMwh={summaryData.total_actual_wind_mwh}
               title="Where Does This Pay Off? Full-Month Benchmark Calculator"
               subtitle="Evaluate net financial payoff across all 30 January delivery days for each candidate model and baseline."
               allowModelSelection={true}

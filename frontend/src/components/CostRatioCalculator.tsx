@@ -21,20 +21,20 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
   avoidedMwh,
   extraMwh,
   contextLabel = "Completed Days to Cutoff",
-  totalGenerationMwh = 6263226.5,
-  avoidedMwhV1 = 627721.3,
-  extraMwhV1 = 739465.9,
-  avoidedMwhV2 = 1022627.7,
-  extraMwhV2 = 905978.4,
-  avoidedMwhFlat15 = 1016662.2,
-  extraMwhFlat15 = 411934.4,
+  totalGenerationMwh,
+  avoidedMwhV1 = 0,
+  extraMwhV1 = 0,
+  avoidedMwhV2 = 0,
+  extraMwhV2 = 0,
+  avoidedMwhFlat15 = 0,
+  extraMwhFlat15 = 0,
   title = "Where Does This Pay Off? Cost-Ratio Payoff Calculator",
   subtitle = "Evaluate net financial impact across completed delivery days without needing market price data.",
   allowModelSelection = false,
 }) => {
   const [advancePrice, setAdvancePrice] = useState<number>(70);
-  const [selectedModel, setSelectedModel] = useState<"v1" | "v2" | "flat15">("v1");
-  const [volumeMode, setVolumeMode] = useState<"national" | "per100" | "custom">("national");
+  const [selectedModel, setSelectedModel] = useState<"flat15" | "v1" | "v2">("flat15");
+  const [volumeMode, setVolumeMode] = useState<"per100" | "custom" | "national">("per100");
   const [customPortfolioMwh, setCustomPortfolioMwh] = useState<number>(10000);
 
   // Active base volume parameters
@@ -59,12 +59,16 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
   // Scale volume depending on chosen volume scope
   let scaleFactor = 1.0;
 
+  const effectiveTotalGen = totalGenerationMwh && totalGenerationMwh > 0
+    ? totalGenerationMwh
+    : (baseAvoidedMwh > 0 ? baseAvoidedMwh * 10 : 1.0);
+
   if (volumeMode === "per100") {
-    // Normalised per 100 MWh delivered (100 / total generation across the completed period)
-    scaleFactor = totalGenerationMwh > 0 ? 100.0 / totalGenerationMwh : 1.0 / 62632.265;
+    // Normalised per 100 MWh delivered
+    scaleFactor = 100.0 / effectiveTotalGen;
   } else if (volumeMode === "custom") {
     // Custom portfolio size scaled relative to national grid outturn
-    scaleFactor = totalGenerationMwh > 0 ? customPortfolioMwh / totalGenerationMwh : customPortfolioMwh / 6263226.5;
+    scaleFactor = customPortfolioMwh / effectiveTotalGen;
   }
 
   const activeAvoidedMwh = baseAvoidedMwh * scaleFactor;
@@ -135,6 +139,16 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
         {allowModelSelection && (
           <div className="flex items-center p-1 bg-slate-100 rounded-lg text-xs font-semibold self-start sm:self-auto">
             <button
+              onClick={() => setSelectedModel("flat15")}
+              className={`px-3 py-1.5 rounded-md transition-colors ${
+                selectedModel === "flat15"
+                  ? "bg-white text-slate-900 shadow-xs font-bold"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              Flat 15% Baseline (Headline)
+            </button>
+            <button
               onClick={() => setSelectedModel("v1")}
               className={`px-3 py-1.5 rounded-md transition-colors ${
                 selectedModel === "v1"
@@ -142,7 +156,7 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              v1 Additive (Headline p75)
+              v1 Additive (Declared p75)
             </button>
             <button
               onClick={() => setSelectedModel("v2")}
@@ -153,16 +167,6 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
               }`}
             >
               v2 Proportional (p75)
-            </button>
-            <button
-              onClick={() => setSelectedModel("flat15")}
-              className={`px-3 py-1.5 rounded-md transition-colors ${
-                selectedModel === "flat15"
-                  ? "bg-white text-slate-900 shadow-xs font-bold"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Flat 15% Baseline
             </button>
           </div>
         )}
@@ -185,7 +189,10 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
               max={300}
               step={5}
               value={advancePrice}
-              onChange={(e) => setAdvancePrice(Math.max(1, Number(e.target.value) || 0))}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setAdvancePrice(isNaN(val) || val < 1 ? 1 : val);
+              }}
               className="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 rounded-lg font-mono font-bold text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
             />
           </div>
@@ -238,7 +245,10 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
                 min={100}
                 step={500}
                 value={customPortfolioMwh}
-                onChange={(e) => setCustomPortfolioMwh(Math.max(1, Number(e.target.value) || 0))}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setCustomPortfolioMwh(isNaN(val) || val < 1 ? 1 : val);
+                }}
                 className="w-24 px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
               <span className="text-[11px] text-slate-500 font-mono">MWh delivered volume</span>
@@ -363,14 +373,17 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
       </div>
 
       {/* Explanatory Footer */}
-      <div className="text-[11px] text-slate-500 space-y-1 bg-slate-50 p-3 rounded-lg border border-slate-200">
+      <div className="text-[11px] text-slate-500 space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200">
         <p>
           <strong>How this calculation works:</strong> At decision time, planning with a cautious margin avoids <code className="bg-white px-1 py-0.5 rounded">ΔE_avoided</code> of shortfall that would otherwise be purchased same-day at price <code className="bg-white px-1 py-0.5 rounded">k × P_advance</code>, while requiring <code className="bg-white px-1 py-0.5 rounded">ΔE_advance</code> of replacement power arranged in advance at price <code className="bg-white px-1 py-0.5 rounded">P_advance</code>.
         </p>
         <p className="font-mono text-slate-600">
           Net Payoff = [Avoided MWh × (k × P_advance)] − [Extra Advance MWh × P_advance] = P_advance × [Avoided MWh × k − Extra Advance MWh].
         </p>
-        <p className="text-slate-500 italic pt-1">
+        <p className="text-slate-600 font-medium">
+          Note: This calculation treats extra advance power as unrecoverable, which overstates the cost when surplus can be resold.
+        </p>
+        <p className="text-slate-500 italic pt-0.5">
           Disclaimer: This calculator illustrates physical MWh trade-offs across historical delivery days replayed under illustrative price assumptions. Wholesale day-ahead and same-day imbalance prices vary continuously in real trading.
         </p>
       </div>

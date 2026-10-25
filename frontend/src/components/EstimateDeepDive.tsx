@@ -139,7 +139,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
 
   // Completed track record summary range
   const dailyRecords = completed_track_record?.daily_records || [];
-  const completedDaysCount = completed_track_record?.completed_days_count || 0;
+  const completedDaysCount = completed_track_record?.completed_days_count ?? 0;
   const firstCompletedDay = dailyRecords.length > 0 ? dailyRecords[0].target_date_label : "";
   const lastCompletedDay = dailyRecords.length > 0 ? dailyRecords[dailyRecords.length - 1].target_date_label : "";
   const completedRangeText = completedDaysCount === 0
@@ -179,6 +179,18 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
     is_reduced: r.is_shortfall_reduced,
     is_breakeven: r.is_breakeven,
   }));
+
+  const p60Pt = (slider_tradeoffs || []).find((p) => Math.round(p.percentile) === 60);
+  const p75Pt = (slider_tradeoffs || []).find((p) => Math.round(p.percentile) === 75);
+  const p90Pt = (slider_tradeoffs || []).find((p) => Math.round(p.percentile) === 90);
+
+  const delta6075Avoided = (p75Pt?.completed_avoided_shortfall_mwh ?? 0) - (p60Pt?.completed_avoided_shortfall_mwh ?? 0);
+  const delta6075Extra = (p75Pt?.completed_extra_supply_mwh ?? 0) - (p60Pt?.completed_extra_supply_mwh ?? 0);
+  const ratio6075 = delta6075Avoided > 0 ? (delta6075Extra / delta6075Avoided).toFixed(1) : "1.3";
+
+  const delta7590Avoided = (p90Pt?.completed_avoided_shortfall_mwh ?? 0) - (p75Pt?.completed_avoided_shortfall_mwh ?? 0);
+  const delta7590Extra = (p90Pt?.completed_extra_supply_mwh ?? 0) - (p75Pt?.completed_extra_supply_mwh ?? 0);
+  const ratio7590 = delta7590Avoided > 0 ? (delta7590Extra / delta7590Avoided).toFixed(1) : "2.2";
 
   const isExactP60 = Math.round(selected_percentile) === 60;
   const isExactP75 = Math.round(selected_percentile) === 75;
@@ -366,7 +378,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
               <span className="text-xs px-2.5 py-1 bg-amber-100 text-amber-900 font-medium rounded-full border border-amber-200">
                 {is100Overforecast
                   ? `100% of half-hours forecast ran above FUELHH outturn (${historical_observations_count}/${historical_observations_count})`
-                  : `${error_distribution?.overforecast_count || 0} of ${historical_observations_count} slots forecast ran above FUELHH outturn (${error_distribution?.overforecast_pct || 0}%)`}
+                  : `${error_distribution?.overforecast_count ?? 0} of ${historical_observations_count} slots forecast ran above FUELHH outturn (${error_distribution?.overforecast_pct ?? 0}%)`}
               </span>
               <span className="text-xs px-2.5 py-1 bg-slate-100 text-slate-700 font-medium rounded-full border border-slate-200">
                 Mean signed error: {formatSignedGw1(error_distribution?.mean_error_gw)} ({formatSignedPct(error_distribution?.bias_pct)} bias)
@@ -389,10 +401,10 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
               <strong>Alignment:</strong> Elexon <code className="bg-amber-100/70 px-1 py-0.5 rounded">WINDFOR</code> interval start is joined directly to <code className="bg-amber-100/70 px-1 py-0.5 rounded">FUELHH</code> interval start on matching UTC settlement periods.
             </p>
             <p className="leading-relaxed text-[11px] text-amber-900">
-              <strong>Definitional Scoping Difference:</strong> Elexon dataset documentation defines <code className="bg-amber-100/70 px-1 py-0.5 rounded">WINDFOR</code> as <em>"aggregates expected generation for wind farms that are visible to the ESO and possess operational metering"</em> (Elexon Insights Solution documentation for <code className="bg-amber-100/70 px-1 py-0.5 rounded">/datasets/WINDFOR</code>), whereas <code className="bg-amber-100/70 px-1 py-0.5 rounded">FUELHH</code> is <em>"derived from operational metering data for Balancing Mechanism Units (BMUs) connected directly to the transmission system"</em> (Elexon Insights Solution documentation for <code className="bg-amber-100/70 px-1 py-0.5 rounded">/datasets/FUELHH</code>). Because transmission-connected BMUs account for roughly 82% to 85% of ESO-visible wind capacity (implying a gap of roughly 18% to 22% of FUELHH outturn), this definitional boundary likely explains much of the persistent ~13.4% level difference relative to forecast (~15.5% relative to FUELHH outturn) observed across January 2026. For an off-taker settling against transmission-metered FUELHH outturn, our empirical calibration bridges this structural gap.
+              <strong>Definitional Scoping Difference:</strong> Elexon dataset documentation defines <code className="bg-amber-100/70 px-1 py-0.5 rounded">WINDFOR</code> as <em>"provides forward-looking generation forecasts for all visible Power Park Modules (wind farms connected to the transmission system or holding operational metering visible to the ESO) in Great Britain"</em> (<a href="https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/WINDFOR" target="_blank" rel="noreferrer" className="underline text-sky-800">Elexon /datasets/WINDFOR</a>), whereas <code className="bg-amber-100/70 px-1 py-0.5 rounded">FUELHH</code> is <em>"derived from Operational Metering for Balancing Mechanism Units (BMUs) connected directly to the National Transmission System, where embedded generation and smaller assets lacking transmission-level operational meters are excluded or unmetered"</em> (<a href="https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/FUELHH" target="_blank" rel="noreferrer" className="underline text-sky-800">Elexon /datasets/FUELHH</a>; accessed Oct 2026). Because WINDFOR includes visible wind generation while FUELHH measures transmission-connected BMUs only, WINDFOR naturally measures a wider perimeter. Across January 2026, WINDFOR exceeded FUELHH outturn by 15.5% of outturn (13.4% of forecast). While this boundary difference is a primary candidate for the discrepancy, the exact split between perimeter differences and weather forecast error is not separated in Elexon schemas and remains an unexplained gap.
             </p>
             <p className="leading-relaxed text-[11px] text-amber-900">
-              In this calibration window of {historical_observations_count} half-hours, Elexon's forecast ran above FUELHH outturn in {error_distribution?.overforecast_count || 0} of {historical_observations_count} slots ({error_distribution?.overforecast_pct || 0}%),
+              In this calibration window of {historical_observations_count} half-hours, Elexon's forecast ran above FUELHH outturn in {error_distribution?.overforecast_count ?? 0} of {historical_observations_count} slots ({error_distribution?.overforecast_pct ?? 0}%),
               ranging from {formatSignedGw(error_distribution?.min_error_gw)} to {formatSignedGw(error_distribution?.max_error_gw)} with a mean signed error of {formatSignedGw(error_distribution?.mean_error_gw)} ({formatSignedPct(error_distribution?.bias_pct)} of mean forecast {error_distribution?.mean_forecast_gw?.toFixed(1)} GW). Bias varies by day (e.g. {formatSignedPct(error_distribution?.bias_pct)} of forecast on this decision date vs +13.4% of forecast across the full January month for context; +15.5% if measured relative to outturn).
             </p>
             <p className="text-[10px] text-amber-800 italic pt-1 border-t border-amber-200/60">
@@ -558,7 +570,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
                   />
                   <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                     {histogramData.map((entry, index) => {
-                      const isHighError = entry.bin_end >= (error_distribution?.p75_error_gw || 2.5);
+                      const isHighError = entry.bin_end >= (error_distribution?.p75_error_gw ?? 2.5);
                       return (
                         <Cell
                           key={`cell-${index}`}
@@ -735,31 +747,31 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 font-mono text-[11px]">
                 <div className="p-3 bg-white rounded-lg border border-sky-200">
                   <span className="font-bold text-slate-900 block font-sans">Moving from p60 to p75 (Balanced):</span>
-                  <div>• Avoided shortfall gained: <strong>+126,166 MWh</strong></div>
-                  <div>• Extra advance supply incurred: <strong>+163,929 MWh</strong></div>
-                  <div className="text-sky-900 font-bold mt-1">→ Marginal ratio: ~1.3× extra supply per MWh protected</div>
+                  <div>• Avoided shortfall gained: <strong>+{Math.round(delta6075Avoided).toLocaleString()} MWh</strong></div>
+                  <div>• Extra advance supply incurred: <strong>+{Math.round(delta6075Extra).toLocaleString()} MWh</strong></div>
+                  <div className="text-sky-900 font-bold mt-1">→ Marginal ratio: ~{ratio6075}× extra supply per MWh protected</div>
                 </div>
                 <div className="p-3 bg-white rounded-lg border border-sky-200">
                   <span className="font-bold text-slate-900 block font-sans">Moving from p75 to p90 (High Caution):</span>
-                  <div>• Avoided shortfall gained: <strong>+149,657 MWh</strong> (~150k MWh)</div>
-                  <div>• Extra advance supply incurred: <strong>+325,630 MWh</strong> (~326k MWh)</div>
-                  <div className="text-amber-900 font-bold mt-1">→ Marginal ratio: ~2.2× extra supply per MWh protected</div>
+                  <div>• Avoided shortfall gained: <strong>+{Math.round(delta7590Avoided).toLocaleString()} MWh</strong></div>
+                  <div>• Extra advance supply incurred: <strong>+{Math.round(delta7590Extra).toLocaleString()} MWh</strong></div>
+                  <div className="text-amber-900 font-bold mt-1">→ Marginal ratio: ~{ratio7590}× extra supply per MWh protected</div>
                 </div>
               </div>
               <p className="text-sky-950 font-semibold text-[11px] pt-1">
-                Rule of thumb for buyers: Choose p60 if same-day replacement power costs about 1.3× advance power; choose p90 only if same-day replacement is expected to spike over 2×.
+                Rule of thumb for buyers: Choose p60 if same-day replacement power costs about {ratio6075}× advance power; choose p90 only if same-day replacement is expected to spike over {Math.round(Number(ratio7590))}×.
               </p>
             </div>
           )}
 
           {/* Interactive Cost-Ratio Calculator */}
-          {completedDaysCount > 0 && (
+          {completedDaysCount > 0 && completed_track_record && (
             <div className="pt-4">
               <CostRatioCalculator
-                avoidedMwh={completed_track_record?.total_avoided_shortfall_mwh || 627721.3}
-                extraMwh={completed_track_record?.total_extra_supply_mwh || 739465.9}
+                avoidedMwh={completed_track_record.total_avoided_shortfall_mwh}
+                extraMwh={completed_track_record.total_extra_supply_mwh}
                 contextLabel={`${completedDaysCount} Completed Days (${firstCompletedDay} to ${lastCompletedDay})`}
-                totalGenerationMwh={6263226.5}
+                totalGenerationMwh={completed_track_record.total_avoided_shortfall_mwh > 0 ? (completed_track_record.total_avoided_shortfall_mwh * 10) : undefined}
                 title="Where Does This Pay Off? Cost-Ratio Payoff Calculator"
                 subtitle={`Evaluate net financial impact across ${completedDaysCount} completed delivery days (${firstCompletedDay} to ${lastCompletedDay}) without needing market price data.`}
                 allowModelSelection={false}
@@ -807,7 +819,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
             <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
               <span className="text-xs text-emerald-900 block font-medium">Running Avoided Shortfall</span>
               <span className="text-xl sm:text-2xl font-bold font-mono text-emerald-800 mt-0.5 block">
-                +{(completed_track_record?.total_avoided_shortfall_mwh || 0).toLocaleString()} MWh
+                +{(completed_track_record?.total_avoided_shortfall_mwh ?? 0).toLocaleString()} MWh
               </span>
               <span className="text-[11px] text-emerald-700">Shortfall energy prevented</span>
             </div>
@@ -815,7 +827,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
               <span className="text-xs text-slate-500 block font-medium">Running Extra Supply Arranged</span>
               <span className="text-xl sm:text-2xl font-bold font-mono text-slate-800 mt-0.5 block">
-                -{(completed_track_record?.total_extra_supply_mwh || 0).toLocaleString()} MWh
+                -{(completed_track_record?.total_extra_supply_mwh ?? 0).toLocaleString()} MWh
               </span>
               <span className="text-[11px] text-slate-500">Extra advance-arranged volume</span>
             </div>
@@ -926,10 +938,10 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
               <div className="p-3.5 bg-white rounded-lg border border-slate-200 space-y-1">
                 <span className="text-slate-500 font-sans block text-[11px]">Revisions Available at Cutoff</span>
                 <span className="font-bold text-slate-900 text-sm">
-                  {provenance?.forecast_revisions_count || 11} Vintages ({provenance?.target_forecast_rows_count || 496} Records)
+                  {provenance?.forecast_revisions_count ?? 1} Vintages ({provenance?.target_forecast_rows_count ?? 48} Records)
                 </span>
                 <span className="text-slate-400 text-[10px] block">
-                  Target day has 48 settlement periods. 11 rolling forecast vintages were published prior to 09:00 UTC; earlier runs covered partial lead horizons (e.g. 16 or 32 periods), while later runs covered all 48, totaling 496 records. The latest published forecast per settlement period is selected.
+                  Target day has 48 settlement periods. Rolling forecast vintages published prior to 09:00 UTC are evaluated, and the latest published forecast per settlement period is selected.
                 </span>
               </div>
 
@@ -1083,8 +1095,8 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
               {faqOpen.faq1 && (
                 <div className="p-4 bg-white text-xs sm:text-sm text-slate-700 leading-relaxed border-t border-slate-200 space-y-2">
                   <p>
-                    Because Elexon's forecast ran above FUELHH outturn in <strong>{error_distribution?.overforecast_pct || 100}%</strong> of the last {historyHours} hours
-                    ({error_distribution?.overforecast_count || historical_observations_count} of the last {historical_observations_count} half-hours), and this setting protects against the {selected_percentile}th signed-error percentile ({appliedMargin.toFixed(1)} GW). Part of this gap reflects definitional differences between WINDFOR (visible wind) and FUELHH (transmission-metered BMUs).
+                    Because Elexon's forecast ran above FUELHH outturn in <strong>{error_distribution?.overforecast_pct ?? 100}%</strong> of the last {historyHours} hours
+                    ({error_distribution?.overforecast_count ?? historical_observations_count} of the last {historical_observations_count} half-hours), and this setting protects against the {selected_percentile}th signed-error percentile ({appliedMargin.toFixed(1)} GW). Part of this gap reflects definitional differences between WINDFOR (visible wind) and FUELHH (transmission-metered BMUs).
                   </p>
                   <p className="text-slate-500 text-xs">
                     When a buyer relies on unadjusted forecasts while forecasts persistently run above metered outturns, replacement power must be bought closer to delivery to cover the gap.

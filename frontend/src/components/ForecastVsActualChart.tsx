@@ -26,12 +26,17 @@ export const ForecastVsActualChart: React.FC<ForecastVsActualChartProps> = ({
 
   const chartData = intervals.map((int) => {
     const timeStr = int.interval_start.substring(11, 16);
+    const a = int.actual_generation_gw;
+    const ef = int.elexon_forecast_gw;
+    const se = int.safe_estimate_gw;
     return {
       time: timeStr,
       settlementPeriod: int.settlement_period,
-      elexonForecast: int.elexon_forecast_gw,
-      safeEstimate: int.safe_estimate_gw,
-      actualGeneration: int.actual_generation_gw,
+      elexonForecast: ef,
+      safeEstimate: se,
+      actualGeneration: a,
+      elexonShortfallRange: ef > a ? [a, ef] : [a, a],
+      safeShortfallRange: se > a ? [a, se] : [a, a],
       elexonShortfallMwh: int.elexon_shortfall_mwh,
       safeShortfallMwh: int.safe_shortfall_mwh,
       savedMwh: int.saved_mwh,
@@ -161,6 +166,26 @@ export const ForecastVsActualChart: React.FC<ForecastVsActualChartProps> = ({
                 name="Indicative Range"
                 fill="#f0f9ff"
                 stroke="#bae6fd"
+                strokeDasharray="2 2"
+                opacity={0.4}
+              />
+
+              {/* Shaded Shortfall Zones: Elexon & Safe Estimate */}
+              <Area
+                type="linear"
+                dataKey="elexonShortfallRange"
+                name="Elexon Shortfall Zone"
+                fill="#fde68a"
+                stroke="#f59e0b"
+                strokeDasharray="2 2"
+                opacity={0.35}
+              />
+              <Area
+                type="linear"
+                dataKey="safeShortfallRange"
+                name="Our Shortfall Zone"
+                fill="#fed7aa"
+                stroke="#ea580c"
                 strokeDasharray="2 2"
                 opacity={0.4}
               />

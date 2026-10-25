@@ -1,8 +1,13 @@
-import React, { useEffect } from "react";
-import { BookOpen, ShieldCheck, TrendingDown, CheckCircle } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { BookOpen, TrendingDown, ShieldCheck, CheckCircle } from "lucide-react";
+import { fetchSummary } from "../api/client";
+import { MonthSummaryResponse } from "../types";
 
 export const DocsPage: React.FC = () => {
+  const [summaryData, setSummaryData] = useState<MonthSummaryResponse | null>(null);
+
   useEffect(() => {
+    fetchSummary().then(setSummaryData).catch(() => {});
     if (window.location.hash) {
       const element = document.querySelector(window.location.hash);
       if (element) {
@@ -45,9 +50,11 @@ export const DocsPage: React.FC = () => {
             <span>Economic Break-Even Formula</span>
           </div>
           <p className="leading-relaxed">
-            <strong>Break-even: The cautious plan pays off if replacement power costs at least 1.01× the cost of excess advance supply.</strong><br />
-            Formula: <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-200">Incremental Advance Power (983,102 MWh) / Avoided Shortfall (976,194 MWh) = 1.007× ≈ 1.01×</code>.
-            In wholesale electricity markets, prompt replacement electricity during shortfalls often costs more than 1.01× day-ahead forward power.
+            <strong>Break-even: The cautious plan pays off if replacement power costs at least {summaryData ? `${summaryData.breakeven_ratio.toFixed(2)}×` : "1.02×"} the cost of excess advance supply.</strong><br />
+            Formula: <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-200">
+              Incremental Advance Power ({summaryData ? `${Math.round(summaryData.total_incremental_surplus_mwh).toLocaleString()} MWh` : "ΔExtra MWh"}) / Avoided Shortfall ({summaryData ? `${Math.round(summaryData.total_avoided_shortfall_mwh).toLocaleString()} MWh` : "ΔAvoided MWh"}) = {summaryData ? `${summaryData.breakeven_ratio.toFixed(3)}×` : "k*"}
+            </code>.
+            In wholesale electricity markets, prompt replacement electricity during shortfalls often costs more than {summaryData ? `${summaryData.breakeven_ratio.toFixed(2)}×` : "1.02×"} day-ahead forward power.
           </p>
           <p className="text-[11px] text-amber-800/80 italic pt-1 border-t border-amber-200/60">
             * Note: The break-even ratio is a simplified physical energy metric (extra supply / avoided shortfall) assuming unneeded advance power is not resold. Real market settlement involves dual imbalance pricing, cashout spreads, and within-day trading.
@@ -89,20 +96,19 @@ export const DocsPage: React.FC = () => {
         <div className="p-4 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-700 space-y-2">
           <span className="font-bold text-slate-900 block">Definitional Scoping & Systemic Level Difference:</span>
           <p className="leading-relaxed">
-            Over the 1,440 target slots in January 2026, Elexon's raw day-ahead forecast totaled <strong>9.52 TWh</strong> against <strong>8.25 TWh</strong> realized FUELHH outturn, running <strong>15.5% above outturn</strong>. Elexon shortfall occurred across 16.8% of wind generation, while surplus occurred in only 1.3%.
+            Over the 1,440 target slots in January 2026, Elexon's raw day-ahead forecast totaled <strong>9.52 TWh</strong> against <strong>8.25 TWh</strong> realized FUELHH outturn, running <strong>15.5% above outturn (13.4% of forecast)</strong>. Raw Elexon shortfall occurred across 16.8% of wind generation, while surplus occurred in only 1.3%.
           </p>
           <div className="p-3 bg-white rounded-lg border border-slate-200 text-slate-800 space-y-1.5 leading-relaxed">
-            <span className="font-semibold text-slate-900 block text-[11px] uppercase tracking-wider">Root Cause: Definitional Boundary Gap (Cited Sources)</span>
+            <span className="font-semibold text-slate-900 block text-[11px] uppercase tracking-wider">Dataset Scoping & Official Elexon Definitions</span>
             <p>
-              This difference is primarily a structural boundary gap rather than weather model optimism. Official Elexon and NESO documentation clarifies that the two datasets measure different physical perimeters:
+              Official Elexon Insights Solution documentation confirms that WINDFOR and FUELHH describe different operational perimeters:
             </p>
-            <ul className="list-disc list-inside space-y-1 text-slate-700 ml-1">
-              <li><strong>WINDFOR (NESO Day-Ahead Wind Forecast):</strong> Models national <em>visible wind generation</em>, encompassing transmission-connected wind farms plus telemetered distribution-connected (embedded) wind farms *(Source: Elexon Insights Solution documentation for <code className="bg-slate-100 px-1 py-0.5 rounded">/datasets/WINDFOR</code>)*.</li>
-              <li><strong>FUELHH (Settlement Outturn by Fuel Type):</strong> Derived strictly from operational metering on <em>Balancing Mechanism Units (BMUs)</em> connected directly to the high-voltage transmission system, omitting unmetered embedded generation *(Sources: Elexon Insights Solution documentation for <code className="bg-slate-100 px-1 py-0.5 rounded">/datasets/FUELHH</code>; BSC Section Q Operational Metering)*.</li>
-              <li><strong>Visibility Ratio:</strong> NESO documents that transmission-connected BMUs represent approximately <strong>82% to 85%</strong> of visible wind capacity *(Source: NESO System Visibility Guidance)*. Because FUELHH omits embedded wind, WINDFOR is structurally expected by definition to run 12%–18% above FUELHH.</li>
+            <ul className="list-disc list-inside space-y-1.5 text-slate-700 ml-1">
+              <li><strong>WINDFOR (Day-Ahead Wind Forecast):</strong> Defined as <em>"forward-looking generation forecasts for all visible Power Park Modules (wind farms connected to the transmission system or holding operational metering visible to the ESO) in Great Britain, published up to 8 times daily"</em> (<a href="https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/WINDFOR" target="_blank" rel="noreferrer" className="underline text-sky-800">Elexon /datasets/WINDFOR</a>; accessed Oct 2026).</li>
+              <li><strong>FUELHH (Settlement Outturn by Fuel Type):</strong> Defined as <em>"half-hourly generation outturn by fuel type, derived from Operational Metering for Balancing Mechanism Units (BMUs) connected directly to the National Transmission System, where embedded generation and smaller assets lacking transmission-level operational meters are excluded or unmetered"</em> (<a href="https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/FUELHH" target="_blank" rel="noreferrer" className="underline text-sky-800">Elexon /datasets/FUELHH</a>; accessed Oct 2026).</li>
             </ul>
             <p className="text-slate-600 pt-1">
-              For an electricity market participant hedging against transmission-metered FUELHH outturn, using raw WINDFOR without adjusting for the embedded wind boundary will guarantee persistent shortfall. Our model recalibrates for this structural boundary.
+              Because WINDFOR models ESO-visible generation while FUELHH measures transmission BMUs only, WINDFOR naturally measures a broader perimeter. While this boundary difference is a primary candidate for the ~13.4% gap relative to forecast (~15.5% relative to outturn), the exact breakdown between perimeter scoping and weather model error is not separated in published Elexon schemas and remains an unexplained gap. For an off-taker settling against transmission-metered FUELHH outturn, our calibration bridges this structural gap.
             </p>
           </div>
         </div>
@@ -124,7 +130,7 @@ export const DocsPage: React.FC = () => {
           <ul className="list-disc list-inside space-y-1.5 text-sky-900 leading-relaxed">
             <li><strong>Decision & Target Day Mapping:</strong> 30 decision dates (January 1–30, 2026) target January 2–31, 2026 ($D+1$). This creates exactly <strong>1,440 target half-hourly intervals</strong> ($30 \times 48 = 1,440$). January 1 outturn is used purely for calibration history and is not a target day.</li>
             <li><strong>Target Forecast Selection:</strong> For target day $D+1$, select the latest WINDFOR forecast published at or before 09:00 UTC on day $D$. Forecast vintages published after 09:00 UTC or on the target day itself are strictly filtered out.</li>
-            <li><strong>Calibration Outturn Selection:</strong> Only historical half-hours whose FUELHH actual settlement interval ended at or before 09:00 UTC on decision day $D$ are admitted into the 48-hour calibration lookback window.</li>
+            <li><strong>Calibration Outturn Selection & Publication Lag Assumption:</strong> Factoring in an explicit physical recording and processing lag assumption (1 hour), only historical half-hours whose settlement interval ended at or before 08:00 UTC on decision day $D$ (at least 1 hour prior to the 09:00 UTC freeze) are admitted into the calibration lookback window.</li>
           </ul>
         </div>
       </section>
@@ -179,31 +185,31 @@ export const DocsPage: React.FC = () => {
             {/* Flat 15% Pre-set Benchmark */}
             <div className="p-3.5 bg-white rounded-lg border border-emerald-300">
               <span className="font-bold text-emerald-950 block mb-1 font-sans text-xs">Flat 15% Haircut (Pre-Set)</span>
-              <div>• Cut: 1,428,597 MWh (15.0%)</div>
-              <div>• Avoided SF: 1,016,662 MWh</div>
-              <div>• Extra Supply: 411,934 MWh</div>
-              <div className="text-emerald-700 font-bold">• Efficiency: 71.2%</div>
-              <div>• Break-Even: 0.405x</div>
+              <div>• Cut: {summaryData ? `${Math.round(summaryData.flat_15_benchmark.cut_volume_mwh).toLocaleString()} MWh (${summaryData.flat_15_benchmark.cut_volume_pct.toFixed(1)}%)` : "Loading..."}</div>
+              <div>• Avoided SF: {summaryData ? `+${Math.round(summaryData.flat_15_benchmark.avoided_shortfall_mwh).toLocaleString()} MWh` : "Loading..."}</div>
+              <div>• Extra Supply: {summaryData ? `+${Math.round(summaryData.flat_15_benchmark.extra_supply_mwh).toLocaleString()} MWh` : "Loading..."}</div>
+              <div className="text-emerald-700 font-bold">• Efficiency: {summaryData ? `${summaryData.flat_15_benchmark.efficiency_pct.toFixed(1)}%` : "..."}</div>
+              <div>• Break-Even: {summaryData ? `${summaryData.flat_15_benchmark.breakeven_ratio.toFixed(3)}×` : "..."}</div>
             </div>
 
             {/* Rolling Mean Bias */}
             <div className="p-3.5 bg-white rounded-lg border border-slate-300">
               <span className="font-bold text-slate-900 block mb-1 font-sans text-xs">Rolling Mean Bias Baseline</span>
-              <div>• Cut: 1,270,011 MWh (13.3%)</div>
-              <div>• Avoided SF: 694,035 MWh</div>
-              <div>• Extra Supply: 575,976 MWh</div>
-              <div className="text-slate-800 font-bold">• Efficiency: 54.6%</div>
-              <div>• Break-Even: 0.830x</div>
+              <div>• Cut: {summaryData ? `${Math.round(summaryData.rolling_mean_benchmark.cut_volume_mwh).toLocaleString()} MWh (${summaryData.rolling_mean_benchmark.cut_volume_pct.toFixed(1)}%)` : "Loading..."}</div>
+              <div>• Avoided SF: {summaryData ? `+${Math.round(summaryData.rolling_mean_benchmark.avoided_shortfall_mwh).toLocaleString()} MWh` : "Loading..."}</div>
+              <div>• Extra Supply: {summaryData ? `+${Math.round(summaryData.rolling_mean_benchmark.extra_supply_mwh).toLocaleString()} MWh` : "Loading..."}</div>
+              <div className="text-slate-800 font-bold">• Efficiency: {summaryData ? `${summaryData.rolling_mean_benchmark.efficiency_pct.toFixed(1)}%` : "..."}</div>
+              <div>• Break-Even: {summaryData ? `${summaryData.rolling_mean_benchmark.breakeven_ratio.toFixed(3)}×` : "..."}</div>
             </div>
 
             {/* Our Adaptive Estimator */}
             <div className="p-3.5 bg-white rounded-lg border border-sky-300">
-              <span className="font-bold text-sky-950 block mb-1 font-sans text-xs">★ Our Adaptive Model (p75)</span>
-              <div>• Total Cut: 1,959,296 MWh (20.6%)</div>
-              <div>• Avoided SF: 976,194 MWh</div>
-              <div>• Extra Supply: 983,102 MWh</div>
-              <div className="text-sky-700 font-bold">• Efficiency: 49.8%</div>
-              <div>• Break-Even: 1.007x</div>
+              <span className="font-bold text-sky-950 block mb-1 font-sans text-xs">★ Our Adaptive Model (v1 p75)</span>
+              <div>• Total Cut: {summaryData ? `${Math.round(summaryData.total_volume_cut_mwh).toLocaleString()} MWh` : "Loading..."}</div>
+              <div>• Avoided SF: {summaryData ? `+${Math.round(summaryData.total_avoided_shortfall_mwh).toLocaleString()} MWh` : "Loading..."}</div>
+              <div>• Extra Supply: {summaryData ? `+${Math.round(summaryData.total_incremental_surplus_mwh).toLocaleString()} MWh` : "Loading..."}</div>
+              <div className="text-sky-700 font-bold">• Efficiency: {summaryData ? `${summaryData.safe_efficiency_pct.toFixed(1)}%` : "..."}</div>
+              <div>• Break-Even: {summaryData ? `${summaryData.breakeven_ratio.toFixed(3)}×` : "..."}</div>
             </div>
           </div>
 
@@ -230,15 +236,15 @@ export const DocsPage: React.FC = () => {
             <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1">
               <span className="font-bold text-slate-900 block">Phase 1: Cold Start (Jan 1–3 Decisions targeting Jan 2–4)</span>
               <p className="text-slate-600 text-xs font-normal">
-                144 slots. Uses linear blend weight formula <code className="bg-slate-100 px-1 py-0.5 rounded">w = min(1.0, n/96)</code> where n is count of prior observations.<br />
-                Avoided Shortfall: <strong>+134,810 MWh</strong> | Extra advance power: <strong>+76,914 MWh</strong> | Ratio (Avoided / Extra): <strong>1.75x</strong>.
+                {summaryData?.cold_start_intervals ?? 144} slots. Uses linear blend weight formula <code className="bg-slate-100 px-1 py-0.5 rounded">w = min(1.0, n/96)</code> where n is count of prior observations.<br />
+                Avoided Shortfall: <strong>+{summaryData ? Math.round(summaryData.cold_start_avoided_shortfall_mwh).toLocaleString() : "..."} MWh</strong> | Extra advance power: <strong>+{summaryData ? Math.round(summaryData.cold_start_incremental_surplus_mwh).toLocaleString() : "..."} MWh</strong> | Ratio (Avoided / Extra): <strong>{summaryData?.cold_start_ratio.toFixed(2) ?? "1.75"}×</strong>.
               </p>
             </div>
             <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1">
               <span className="font-bold text-slate-900 block">Phase 2: Mature Data-Driven (Jan 4–30 Decisions targeting Jan 5–31)</span>
               <p className="text-slate-600 text-xs font-normal">
-                1,296 slots. Full 48h calibration lookback (96 observations, w = 1.0), 100% data-driven.<br />
-                Avoided Shortfall: <strong>+841,384 MWh</strong> | Extra advance power: <strong>+906,187 MWh</strong> | Break-Even Ratio: <strong>1.08x</strong>.
+                {summaryData?.mature_intervals ?? 1296} slots. Full 48h calibration lookback (96 observations, w = 1.0), 100% data-driven.<br />
+                Avoided Shortfall: <strong>+{summaryData ? Math.round(summaryData.mature_avoided_shortfall_mwh).toLocaleString() : "..."} MWh</strong> | Extra advance power: <strong>+{summaryData ? Math.round(summaryData.mature_incremental_surplus_mwh).toLocaleString() : "..."} MWh</strong> | Break-Even Ratio: <strong>{summaryData?.mature_breakeven_ratio.toFixed(2) ?? "1.08"}×</strong>.
               </p>
             </div>
           </div>

@@ -96,13 +96,13 @@ def compute_reliability_metrics(
     actual_headline = float(np.mean(actual_values))
     coverage = float(in_range_count / len(intervals)) if intervals else 0.0
 
-    # Dynamic headline statement
+    # Dynamic headline statement stating both avoided shortfall and extra supply
     if saved_total_sf > 0.05:
-        headline_result = f"Using our estimate would have reduced forecast-related shortfall by {saved_total_sf:,.1f} MWh on this target day."
+        headline_result = f"Using our estimate reduced forecast-related shortfall by {saved_total_sf:,.1f} MWh, requiring {total_inc_surplus:,.1f} MWh of incremental extra supply."
     elif saved_total_sf < -0.05:
-        headline_result = f"Our estimate produced {abs(saved_total_sf):,.1f} MWh more shortfall than Elexon's forecast on this target day."
+        headline_result = f"Our estimate produced {abs(saved_total_sf):,.1f} MWh more shortfall than Elexon's forecast, requiring {total_inc_surplus:,.1f} MWh of incremental extra supply."
     else:
-        headline_result = "Both methods produced the same shortfall energy on this target day."
+        headline_result = f"Both methods produced the same shortfall energy, requiring {total_inc_surplus:,.1f} MWh of incremental extra supply."
 
     methodology_notes = [
         "Historical replay using Elexon WINDFOR and FUELHH data for January 2026 (UTC).",

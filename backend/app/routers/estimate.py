@@ -24,6 +24,7 @@ from app.schemas import (
     SliderTradeoffPoint,
 )
 from app.services.calibrate import calibrate_daily_forecast
+from app.services.models import v2_proportional
 from app.services.prepare import DataManager
 
 router = APIRouter(tags=["Estimate"])
@@ -314,16 +315,10 @@ def get_estimate(
         revisions_count = int(target_fc["publish_time"].nunique()) if not target_fc.empty else 1
         rows_count = len(target_fc)
 
-        # 10. v2 Proportional Margin Calculation
-        if calibration_records:
-            pct_errs = [(r["error_gw"] / r["forecast_gw"]) for r in calibration_records]
-            w_ratio = min(1.0, len(calibration_records) / 96.0)
-            q_ratio = max(0.0, float(np.percentile(pct_errs, percentile)))
-            v2_ratio = (1.0 - w_ratio) * 0.15 + w_ratio * q_ratio
-        else:
-            v2_ratio = 0.15
-        v2_plans = [max(0.0, f["generation_gw"] * (1.0 - v2_ratio)) for f in raw_forecast_records]
-        v2_safe_headline = round(float(np.mean(v2_plans)), 4) if v2_plans else 0.0
+        # 10. v2 Proportional Margin Calculation via model registry
+        v2_res = v2_proportional(raw_forecast_records, calibration_records, percentile)
+        v2_safe_headline = v2_res["headline_gw"]
+        v2_ratio = v2_res["applied_ratio"]
 
         provenance = ProvenanceMetadata(
             forecast_latest_publish_utc=latest_pub_str,

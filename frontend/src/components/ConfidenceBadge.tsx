@@ -26,17 +26,13 @@ export const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({
   };
 
   const getBadgeLabel = () => {
-    switch (label) {
-      case "High":
-        return "Full history (48h)";
-      case "Medium":
-        return `Partial history (${observationsCount}/96 slots)`;
-      case "Low":
-      default:
-        return observationsCount === 0
-          ? "No history (Cold start 15%)"
-          : `Limited history (${observationsCount}/96 slots)`;
+    if (observationsCount >= 96) {
+      return "Full history (48h)";
     }
+    if (observationsCount > 0) {
+      return `Partial history (${observationsCount} of 96 slots)`;
+    }
+    return "No history (Cold start 15%)";
   };
 
   const getMethodologyDescription = () => {

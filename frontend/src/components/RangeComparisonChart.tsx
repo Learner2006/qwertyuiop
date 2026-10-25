@@ -28,7 +28,7 @@ export const RangeComparisonChart: React.FC<RangeComparisonChartProps> = ({
   ];
   const minVal = Math.max(0, Math.min(...allValues) * 0.85);
   const maxVal = Math.max(...allValues) * 1.15;
-  const rangeSpan = maxVal - minVal || 1.0;
+  const rangeSpan = maxVal > minVal ? maxVal - minVal : 1.0;
 
   const toPercent = (val: number) => {
     return Math.min(100, Math.max(0, ((val - minVal) / rangeSpan) * 100));
