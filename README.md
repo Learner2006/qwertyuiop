@@ -3,9 +3,9 @@
 > *“Elexon forecasts wind. We estimate how much of it a buyer can safely rely on.”*
 
 [![Dataset: Elexon BMRS](https://img.shields.io/badge/Dataset-Elexon%20BMRS%20(Jan%202026)-0284c7)](https://data.elexon.co.uk)
-[![Python: 3.9+](https://img.shields.io/badge/Backend-FastAPI%20%7C%20Python%203.9+-blue)](https://fastapi.tiangolo.com)
+[![Python: 3.9-3.12](https://img.shields.io/badge/Backend-FastAPI%20%7C%20Python%203.9--3.12-blue)](https://fastapi.tiangolo.com)
 [![Frontend: React + Vite](https://img.shields.io/badge/Frontend-React%20%7C%20TypeScript%20%7C%20Vite-61dafb)](https://vitejs.dev)
-[![Tests: 29 Passed](https://img.shields.io/badge/Tests-29%20Passed%20(No--Leakage%20Verified)-success)](scripts/check.sh)
+[![Tests: 59 Passed](https://img.shields.io/badge/Tests-59%20Passed%20(Oracles%2C%20Properties%2C%20Bootstrap)-success)](scripts/check.sh)
 
 A complete, deployable MVP that applies a deliberately cautious adjustment to Elexon's day-ahead wind generation forecast and replays the outcome against actual generation to evaluate avoided shortfall energy across January 2026.
 
@@ -202,17 +202,24 @@ Calculated independently for Elexon raw forecast and our safe estimate.
 
 ### 2. Avoided Shortfall Energy (MWh)
 $$\text{saved\_MWh} = \text{elexon\_shortfall\_MWh} - \text{our\_shortfall\_MWh}$$
-*Honest Reporting (No Guarantee of Net Savings):* Negative values (when our estimate underperforms) are preserved and displayed transparently.
+*Honest Reporting:* Evaluates how much physical shortfall is avoided by the cautious plan.
 
-### 3. Additional Advance-Planned Wind (MWh)
-$$\text{extra\_advance\_MWh} = \sum_{t=1}^{48} \max(0, \text{Actual}_{t,\text{GW}} - \text{Safe\_Estimate}_{t,\text{GW}}) \times 1000 \times dt$$
-Represents actual wind above our planned estimate (cost-side trade-off).
+### 3. Incremental Extra Supply Arranged (MWh)
+$$\text{extra\_supply\_MWh} = \text{safe\_surplus\_MWh} - \text{elexon\_surplus\_MWh}$$
+Measures the additional advance supply arranged by the cautious plan relative to the raw forecast.
+Together, avoided shortfall and incremental surplus conserve total cut volume exactly:
+$$\text{avoided\_shortfall\_MWh} + \text{extra\_supply\_MWh} = \text{total\_cut\_volume\_MWh}$$
 
-### 4. Mean Absolute Error (MAE in GW)
+### 4. Economic Net Saving & Break-Even Ratio
+$$\text{net\_saving} = [\text{avoided\_shortfall\_MWh} \times (k - 1) - \text{extra\_supply\_MWh} \times (1 - s)] \times P_{\text{adv}}$$
+$$\text{break\_even\_ratio } k^* = 1 + (1 - s) \times \frac{\text{extra\_supply\_MWh}}{\text{avoided\_shortfall\_MWh}}$$
+Where $k = P_{\text{rep}} / P_{\text{adv}}$ is the replacement power cost premium ratio, and $s \in [0, 1]$ is the surplus recovery fraction (default $s = 0.0$).
+
+### 5. Mean Absolute Error (MAE in GW)
 $$\text{MAE} = \frac{1}{48} \sum_{t=1}^{48} |\text{Prediction}_{t,\text{GW}} - \text{Actual}_{t,\text{GW}}|$$
 
-### 5. Empirical Range Coverage
-Fraction of actual half-hourly points falling within the indicative $[p10, p90]$ band on the target day.
+### 6. Empirical Band Coverage & Realised Coverage
+The nominal $[p10, p90]$ band is an empirical historical error range, not a calibrated probabilistic prediction interval. Across January 2026, realised coverage is 55.8% (ranging from 0% on calm transition days to 100% on steady wind days). Across Feb–Sep 2026 out-of-time validation, realised coverage is 62.5%.
 
 ---
 
@@ -262,15 +269,20 @@ Run the complete, single-command automated test and verification suite:
 
 This runs:
 1. **Dataset Integrity Audit:** Checks schema, UTC timestamps, 1,488 actual intervals, 36,208 forecast intervals, unit conversions, and 100% 48/48 coverage across all 30 days.
-2. **Backend Unit & Integration Tests (29 tests):**
-   - Data preparation & UTC alignment
-   - Calibration boundaries & percentiles
-   - Zero-margin flooring & cold-start blend
-   - Release-blocking no-leakage verification (5 distinct leakage attack scenarios)
-   - Reliability metrics (shortfall MWh factor 500, extra advance, MAE)
-   - API contract consistency and isolation
-3. **Frontend TypeScript Check:** `tsc --noEmit`
-4. **Frontend Production Build:** `vite build`
+2. **Audit Checks Baseline:** Reproduces F1–F12 audit checks and matched-cut benchmarks.
+3. **30-Date Endpoint Sweep:** Verifies HTTP 200 OK and no nulls/NaNs across all 30 dates for both `/api/estimate` and `/api/check`.
+4. **Backend Test Suite (59 tests):**
+   - Release-blocking no-leakage verification (7 distinct leakage attack scenarios)
+   - Independent 4-interval oracle tests and zero-cut identities
+   - Mathematical property invariant tests (monotonicity, conservation, non-negativity, linearity)
+   - Day-block bootstrap uncertainty quantification (statistically significant positive benefit at $k=2$)
+   - Empirical band realised coverage calibration tests (55.8% Jan, 62.5% out-of-time)
+   - Claims & terminology lint test (preventing hype words)
+   - Frontend literal fallbacks & provenance honesty test
+   - Economic ledger identity and break-even tests
+   - Parquet SHA-256 immutability pin
+5. **Frontend TypeScript Check:** `tsc --noEmit`
+6. **Frontend Production Build:** `vite build`
 
 ---
 

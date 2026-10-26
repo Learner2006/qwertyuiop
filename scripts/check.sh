@@ -10,19 +10,29 @@ echo ""
 echo "--> STEP 1: Validating Cached Elexon BMRS Parquet Dataset..."
 python3 backend/scripts/validate_data.py
 
-# 2. Backend Automated Tests (including no-leakage, calibration, metrics, api)
+# 2. Audit Checks Baseline
 echo ""
-echo "--> STEP 2: Running Backend Automated Tests (pytest)..."
+echo "--> STEP 2: Running Audit Checks (F1-F12 Verification)..."
+python3 scripts/audit_checks.py
+
+# 3. 30-Date Endpoint Sweep
+echo ""
+echo "--> STEP 3: Running 30-Date Endpoint Sweep (/api/estimate & /api/check)..."
+python3 scripts/sweep_test.py
+
+# 4. Backend Automated Tests (59 tests including oracles, properties, bootstrap, lint)
+echo ""
+echo "--> STEP 4: Running Backend Test Suite (pytest)..."
 python3 -m pytest backend/tests -v
 
-# 3. Frontend TypeScript Typecheck
+# 5. Frontend TypeScript Typecheck
 echo ""
-echo "--> STEP 3: Running Frontend TypeScript Check (tsc)..."
+echo "--> STEP 5: Running Frontend TypeScript Check (tsc)..."
 (cd frontend && npx tsc --noEmit)
 
-# 4. Frontend Production Build
+# 6. Frontend Production Build
 echo ""
-echo "--> STEP 4: Running Frontend Production Build (vite build)..."
+echo "--> STEP 6: Running Frontend Production Build (vite build)..."
 (cd frontend && npm run build)
 
 echo ""
