@@ -116,9 +116,9 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ intervals, targetD
                           <span>-{data.appliedMargin.toFixed(1)} GW</span>
                         </div>
                         <div className="flex justify-between gap-4 text-slate-400 pt-1 border-t border-slate-800">
-                          <span>Typical Error Range:</span>
+                          <span>Empirical Range [p10–p90]:</span>
                           <span>
-                            [{data.indicativeLower.toFixed(1)} – {data.indicativeUpper.toFixed(1)}] GW
+                            [{data.indicativeLower.toFixed(1)} – {data.indicativeUpper.toFixed(1)}] GW (not a probability interval)
                           </span>
                         </div>
                       </div>
@@ -135,11 +135,11 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({ intervals, targetD
                 )}
               />
 
-              {/* Typical Error Range Area */}
+              {/* Empirical Error Range Area */}
               <Area
                 type="linear"
                 dataKey="rangeBand"
-                name="Typical error range (p10–p90 from last 48h)"
+                name="Empirical [p10, p90] range (realised coverage 55.8% in Jan 2026, not a probability interval)"
                 fill="#e0f2fe"
                 stroke="#bae6fd"
                 strokeDasharray="2 2"

@@ -6,13 +6,14 @@ slider trade-offs across completed days, completed track record, and provenance.
 """
 
 import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 from fastapi import APIRouter, HTTPException, Query
 
 from app.config import settings
 from app.schemas import (
+    BandCoverageInfo,
     CalculationStep,
     CompletedTrackRecord,
     CompletedTrackRecordDay,
@@ -85,6 +86,31 @@ def _compute_completed_track_record(
         days_break_even_under_2x=res["days_break_even_under_2x"],
         daily_records=daily_records,
     )
+
+
+def _compute_trailing_band_coverage(dec_date: datetime.date, dm: DataManager) -> Optional[float]:
+    d = dec_date.day
+    if d <= 2:
+        return None
+    inside_total = 0
+    intervals_total = 0
+    for prev_d in range(1, d - 1):
+        prev_dec = datetime.date(2026, 1, prev_d)
+        prev_tgt = prev_dec + datetime.timedelta(days=1)
+        try:
+            fc = dm.select_target_forecast(prev_dec, prev_tgt)
+            cal = dm.get_calibration_observations(prev_dec)
+            acts = dm.get_target_actuals(prev_tgt)
+            res = calibrate_daily_forecast(fc, cal, percentile=settings.DEFAULT_PERCENTILE)
+            for inter, act in zip(res["intervals"], acts):
+                if inter["indicative_lower_gw"] <= act["generation_gw"] <= inter["indicative_upper_gw"]:
+                    inside_total += 1
+                intervals_total += 1
+        except Exception:
+            pass
+    if intervals_total == 0:
+        return None
+    return round((inside_total / intervals_total) * 100.0, 1)
 
 
 def parse_and_validate_date(date_str: str) -> datetime.date:
@@ -298,6 +324,14 @@ def get_estimate(
             freeze_cutoff_utc=cutoff_utc_str,
         )
 
+        # 11. Empirical Band Realised Coverage (Milestone R5 / Findings F5, F6)
+        trailing_cov = _compute_trailing_band_coverage(dec_date, dm)
+        band_cov_info = BandCoverageInfo(
+            trailing_coverage_pct=trailing_cov,
+            historical_full_month_coverage_pct=55.8,
+            description="Empirical range (not a probability interval)"
+        )
+
         return EstimateResponse(
             decision_date=dec_date.isoformat(),
             target_date=target_date.isoformat(),
@@ -321,6 +355,9 @@ def get_estimate(
             slider_tradeoffs=slider_tradeoffs,
             completed_track_record=completed_track_record,
             provenance=provenance,
+            band_coverage=band_cov_info,
+            band_realised_coverage_pct=55.8,
+            trailing_band_coverage_pct=trailing_cov,
         )
     except Exception as e:
         if isinstance(e, HTTPException):

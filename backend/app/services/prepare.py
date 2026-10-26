@@ -20,6 +20,7 @@ class DataManager:
 
     def __init__(self, data_path: Optional[str] = None):
         self.data_path = data_path or settings.DATA_PATH
+        self._day_ahead_cache = {}
         self.load_data()
 
     @classmethod
@@ -48,7 +49,11 @@ class DataManager:
             settings.DECISION_CUTOFF_MINUTE_UTC
         )
         
-        unique_target_dates = sorted(self._actuals_df["interval_start"].dt.date.unique())
+        min_date = self._actuals_df["interval_start"].min().date()
+        unique_target_dates = [
+            d for d in sorted(self._actuals_df["interval_start"].dt.date.unique())
+            if d > min_date
+        ]
         for target_date in unique_target_dates:
             dec_date = target_date - datetime.timedelta(days=1)
             cutoff_dt = pd.Timestamp(datetime.datetime.combine(dec_date, cutoff_time), tz="UTC")

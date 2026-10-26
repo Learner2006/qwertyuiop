@@ -50,6 +50,7 @@ Every user-facing statement regarding model timing, certainty, data boundaries, 
 | **Surplus Recovery Accounting** | `CostRatioCalculator.tsx`, `economics.py` | Hidden $s=0$ assumption without user controls | Explicit surplus recovery slider $s \in [0.0, 1.0]$ defaulting to conservative $s=0.0$, plus loss disclosures at $k=1.0$ | **Fixed** |
 | **Publication Lag Disclosure** | `CheckPage.tsx`, `EstimateDeepDive.tsx`, `DocsPage.tsx` | Stated as factual publication timing | Explicitly marked: *"1-hour publication lag is an operational assumption"* | **Softened** |
 | **Level Bias Metric Precision** | `LandingPage.tsx`, `DocsPage.tsx`, `EstimateDeepDive.tsx` | Inconsistently stated as "+15.5%" or "+13.2 GW%" | Standardized and explicitly labelled: *"+15.5% of outturn (+13.4% of forecast)"* | **Fixed** |
+| **Empirical Range Coverage** | `EstimatePage.tsx`, `ForecastChart.tsx`, `RangeComparisonChart.tsx` | Implied 80% confidence interval / "covers 80% of outcomes" | Standardized honest term: *"Empirical range (not a probability interval)"* disclosing realised coverage of 55.8% in Jan 2026 and 62.5% in Feb–Sep 2026, ranging from 0% to 100% on individual days | **Fixed** |
 
 ---
 

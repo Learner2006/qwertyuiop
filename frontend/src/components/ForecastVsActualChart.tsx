@@ -159,11 +159,11 @@ export const ForecastVsActualChart: React.FC<ForecastVsActualChartProps> = ({
                 )}
               />
 
-              {/* Indicative Range Area */}
+              {/* Empirical Range Area */}
               <Area
                 type="linear"
                 dataKey="indicativeRange"
-                name="Indicative Range"
+                name="Empirical [p10, p90] range (realised coverage 55.8% in Jan 2026, not a probability interval)"
                 fill="#f0f9ff"
                 stroke="#bae6fd"
                 strokeDasharray="2 2"

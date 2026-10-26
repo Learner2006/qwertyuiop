@@ -209,6 +209,12 @@ class CompletedTrackRecord(BaseModel):
     daily_records: List[CompletedTrackRecordDay]
 
 
+class BandCoverageInfo(BaseModel):
+    trailing_coverage_pct: Optional[float] = None
+    historical_full_month_coverage_pct: float = 55.8
+    description: str = "Empirical range (not a probability interval)"
+
+
 class ProvenanceMetadata(BaseModel):
     forecast_latest_publish_utc: str
     forecast_revisions_count: int
@@ -264,6 +270,9 @@ class EstimateResponse(BaseModel):
     slider_tradeoffs: Optional[List[SliderTradeoffPoint]] = None
     completed_track_record: Optional[CompletedTrackRecord] = None
     provenance: Optional[ProvenanceMetadata] = None
+    band_coverage: Optional[BandCoverageInfo] = None
+    band_realised_coverage_pct: float = 55.8
+    trailing_band_coverage_pct: Optional[float] = None
     
     dataset_version: str = "January 2026 Elexon BMRS Replay v1"
 
@@ -329,6 +338,9 @@ class CheckResponse(BaseModel):
     elexon_mae_gw: float
     safe_mae_gw: float
     indicative_range_coverage: float  # Fraction between 0 and 1
+    band_coverage: Optional[BandCoverageInfo] = None
+    band_realised_coverage_pct: float = 55.8
+    trailing_band_coverage_pct: Optional[float] = None
     
     # Calibration metadata
     confidence_label: str

@@ -314,19 +314,19 @@ export const ShortfallComparisonBars: React.FC<ShortfallComparisonBarsProps> = (
           </p>
         </div>
 
-        {/* Indicative Range Coverage Card */}
+        {/* Empirical Range Coverage Card */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
           <div className="flex items-center space-x-2 text-indigo-700 mb-2">
             <TrendingDown className="w-4 h-4" />
             <h4 className="text-xs font-semibold uppercase tracking-wider">
-              Range Empirical Coverage
+              Empirical Range Coverage
             </h4>
           </div>
           <div className="text-xl font-bold font-mono text-slate-900 mt-1">
             {(indicative_range_coverage * 100).toFixed(1)}%
           </div>
           <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-            Fraction of actual half-hourly points falling within the 10th–90th historical error quantiles on this target day.
+            Target-day outturn within [p10, p90] band. (Full-month historical average: 55.8% — not a probability interval).
           </p>
         </div>
       </div>

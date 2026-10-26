@@ -7,11 +7,12 @@ import datetime
 from fastapi import APIRouter, HTTPException, Query
 
 from app.config import settings
-from app.schemas import CheckResponse
+from app.schemas import BandCoverageInfo, CheckResponse
 from app.services.calibrate import calibrate_daily_forecast
 from app.services.metrics import compute_reliability_metrics
 from app.services.prepare import DataManager
 from app.services.replay import replay
+from app.routers.estimate import _compute_trailing_band_coverage
 
 router = APIRouter(tags=["Reliability Check"])
 
@@ -82,6 +83,12 @@ def get_check(
         f15_raw = r_f15["per_day"][0]["raw_result"]
 
         cutoff_utc_str = f"{dec_date.isoformat()}T{settings.DECISION_CUTOFF_HOUR_UTC:02d}:{settings.DECISION_CUTOFF_MINUTE_UTC:02d}:00Z"
+        trailing_cov = _compute_trailing_band_coverage(dec_date, dm)
+        band_cov_info = BandCoverageInfo(
+            trailing_coverage_pct=trailing_cov,
+            historical_full_month_coverage_pct=55.8,
+            description="Empirical range (not a probability interval)"
+        )
 
         return CheckResponse(
             decision_date=dec_date.isoformat(),
@@ -114,6 +121,9 @@ def get_check(
             elexon_mae_gw=metrics_res["elexon_mae_gw"],
             safe_mae_gw=metrics_res["safe_mae_gw"],
             indicative_range_coverage=metrics_res["indicative_range_coverage"],
+            band_coverage=band_cov_info,
+            band_realised_coverage_pct=55.8,
+            trailing_band_coverage_pct=trailing_cov,
             confidence_label=calib_res["confidence_label"],
             historical_observations_count=calib_res["historical_observations_count"],
             history_weight=calib_res["history_weight"],

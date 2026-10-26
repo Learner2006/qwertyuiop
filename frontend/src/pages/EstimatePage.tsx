@@ -280,11 +280,14 @@ export const EstimatePage: React.FC<EstimatePageProps> = ({
                   Error Spread Context
                 </span>
                 <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
-                  Likely range, from the last 48h of errors:{" "}
+                  Empirical range [p10, p90] from recent errors:{" "}
                   <span className="font-mono text-sky-800">
                     {estimateData.indicative_lower_headline_gw.toFixed(1)}–{estimateData.indicative_upper_headline_gw.toFixed(1)} GW
                   </span>
                 </h3>
+                <span className="text-xs text-slate-500 font-normal block mt-1">
+                  Empirical range (not a probability interval) — realised coverage: 55.8% across Jan 2026.
+                </span>
               </div>
 
               {/* Directional error context & Leakage Line */}

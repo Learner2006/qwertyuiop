@@ -158,7 +158,7 @@ export const RangeComparisonChart: React.FC<RangeComparisonChartProps> = ({
               </div>
               <div className="flex items-center space-x-1.5">
                 <span className="w-4 h-3 rounded bg-sky-100 border border-sky-300" />
-                <span className="text-slate-700 font-medium">Indicative Range Band (p10–p90)</span>
+                <span className="text-slate-700 font-medium">Empirical Range Band [p10, p90] (realised coverage 55.8% in Jan 2026)</span>
               </div>
               <div className="flex items-center space-x-1.5">
                 <span className="w-3 h-0.5 bg-emerald-600" />
@@ -175,7 +175,7 @@ export const RangeComparisonChart: React.FC<RangeComparisonChartProps> = ({
               <tr>
                 <th className="px-4 py-3">Metric</th>
                 <th className="px-4 py-3">Daily Average (GW)</th>
-                <th className="px-4 py-3">Indicative Range (GW)</th>
+                <th className="px-4 py-3">Empirical Range [p10, p90] (GW)</th>
                 <th className="px-4 py-3">Delta vs Actual (GW)</th>
               </tr>
             </thead>
@@ -210,7 +210,7 @@ export const RangeComparisonChart: React.FC<RangeComparisonChartProps> = ({
       )}
 
       <p className="text-[11px] text-slate-500 mt-4 italic">
-        Note: The indicative range band reflects historical empirical error quantiles. It is not a guaranteed confidence interval.
+        Note: Empirical range (not a probability interval). In January 2026, this band had a realised coverage of 55.8% of actual outcomes (varying from 0% to 100% across individual days).
       </p>
     </div>
   );

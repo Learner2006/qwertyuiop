@@ -254,6 +254,13 @@ export interface EstimateResponse {
   slider_tradeoffs?: SliderTradeoffPoint[];
   completed_track_record?: CompletedTrackRecord;
   provenance?: ProvenanceMetadata;
+  band_realised_coverage_pct?: number;
+  trailing_band_coverage_pct?: number | null;
+  band_coverage?: {
+    trailing_coverage_pct: number | null;
+    historical_full_month_coverage_pct: number;
+    description: string;
+  };
   dataset_version: string;
 }
 
@@ -306,6 +313,13 @@ export interface CheckResponse {
   elexon_mae_gw: number;
   safe_mae_gw: number;
   indicative_range_coverage: number;
+  band_realised_coverage_pct?: number;
+  trailing_band_coverage_pct?: number | null;
+  band_coverage?: {
+    trailing_coverage_pct: number | null;
+    historical_full_month_coverage_pct: number;
+    description: string;
+  };
   confidence_label: "Low" | "Medium" | "High";
   historical_observations_count: number;
   history_weight: number;
