@@ -29,7 +29,7 @@ export const ComparativeAnalysisSection: React.FC = () => {
               January 2026 Comparative Replay & Model Evaluation
             </h3>
             <p className="text-xs text-slate-500">
-              Honest out-of-sample comparison: v1 (Additive), v2 (Proportional), Flat 15%, and rolling baselines.
+              Second-half evaluation: v1 (Additive), v2 (Proportional), Flat 15%, and rolling baselines.
             </p>
           </div>
         </div>
@@ -52,7 +52,7 @@ export const ComparativeAnalysisSection: React.FC = () => {
               }`}
             >
               <Award className="w-3.5 h-3.5" />
-              <span>v1 vs v2: Out-of-Sample Test</span>
+              <span>v1 vs v2: Second-Half Evaluation</span>
             </button>
             <button
               onClick={() => setActiveTab("calculator")}
@@ -107,7 +107,7 @@ export const ComparativeAnalysisSection: React.FC = () => {
             </button>
           </div>
 
-          {/* TAB: V1 VS V2 OUT-OF-SAMPLE EVALUATION */}
+          {/* TAB: V1 VS V2 SECOND-HALF EVALUATION */}
           {activeTab === "v1v2" && (
             <div className="space-y-6">
               <div className="p-4 bg-sky-50 rounded-xl border border-sky-200 text-xs text-sky-950 leading-relaxed space-y-2">
@@ -125,14 +125,14 @@ export const ComparativeAnalysisSection: React.FC = () => {
                 </p>
               </div>
 
-              {/* OUT-OF-SAMPLE TEST TABLE (JAN 16-30) */}
+              {/* SECOND-HALF TEST TABLE (JAN 16-30) */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    1. Out-of-Sample Test Window: Jan 16–30 Decisions targeting Jan 17–31 (720 intervals)
+                    1. Second-Half Evaluation Window: Jan 16–30 Decisions targeting Jan 17–31 (720 intervals)
                   </h4>
                   <span className="text-[11px] font-mono text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded border border-emerald-200 font-semibold">
-                    Zero Leakage Out-of-Sample
+                    Zero-Leakage Second-Half Window
                   </span>
                 </div>
                 <div className="overflow-x-auto rounded-lg border border-slate-200">
@@ -151,7 +151,7 @@ export const ComparativeAnalysisSection: React.FC = () => {
                     <tbody className="divide-y divide-slate-100 bg-white">
                       {[
                         {
-                          name: "★ v2 (Proportional p75) [Out-of-Sample]",
+                          name: "★ v2 (Proportional p75) [Second Half]",
                           data: summaryData.second_half_v2,
                           bgClass: "bg-sky-50/70 font-semibold",
                           textClass: "text-sky-950 font-bold",
@@ -345,10 +345,10 @@ export const ComparativeAnalysisSection: React.FC = () => {
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed space-y-2">
                 <p>
-                  To test whether adaptive calibration beats pre-established rules, we compare it against two unbiased baselines: a <strong>flat 15% haircut</strong> (set in advance without hindsight) and a <strong>rolling mean-bias correction</strong> (subtracting the 48h rolling average signed error).
+                  To test whether adaptive calibration beats simpler rules, we compare it against two baselines: a <strong>flat 15% haircut</strong> (fixed 15% reduction) and a <strong>rolling mean-bias correction</strong> (subtracting the 48h rolling average signed error).
                 </p>
                 <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 text-amber-950 font-medium">
-                  <strong>Honest Finding:</strong> In January 2026, the pre-set <strong>flat 15% haircut beat the adaptive model</strong> ({summaryData.flat_15_benchmark.efficiency_pct.toFixed(1)}% efficiency vs {summaryData.safe_efficiency_pct.toFixed(1)}%, with a break-even ratio of {summaryData.flat_15_benchmark.breakeven_ratio.toFixed(3)}× vs {summaryData.breakeven_ratio.toFixed(3)}×). Because Elexon's raw forecast ran 15.5% above FUELHH outturn across the GB system, applying a static 15% cut directly neutralized the level bias with very little excess surplus. We report this plainly and do not re-tune parameters in hindsight.
+                  <strong>Honest Finding:</strong> In January 2026, the pre-set <strong>flat 15% haircut beat the adaptive model</strong> ({summaryData.flat_15_benchmark.efficiency_pct.toFixed(1)}% efficiency vs {summaryData.safe_efficiency_pct.toFixed(1)}%, with a break-even ratio of {summaryData.flat_15_benchmark.breakeven_ratio.toFixed(3)}× vs {summaryData.breakeven_ratio.toFixed(3)}×). Because Elexon's raw forecast ran 15.5% above FUELHH outturn across the GB system, applying a static 15% cut directly neutralized the level bias with very little excess surplus. We report this plainly and do not re-tune parameters post-hoc.
                 </div>
               </div>
 

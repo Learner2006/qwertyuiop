@@ -95,7 +95,7 @@ export interface MonthSummaryResponse {
   v1_additive_benchmark?: ModelBenchmark;
   v2_proportional_benchmark?: ModelBenchmark;
 
-  // First-half vs Second-half (out-of-sample) benchmarks
+  // First-half vs Second-half evaluation benchmarks
   first_half_v1?: ModelBenchmark;
   first_half_v2?: ModelBenchmark;
   first_half_flat15?: ModelBenchmark;

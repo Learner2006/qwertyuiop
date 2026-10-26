@@ -103,7 +103,7 @@ class MonthSummaryResponse(BaseModel):
     v1_additive_benchmark: Optional[ModelBenchmark] = None
     v2_proportional_benchmark: Optional[ModelBenchmark] = None
     
-    # First half vs Second half (out-of-sample test) splits
+    # First half vs Second half evaluation splits
     first_half_v1: Optional[ModelBenchmark] = None
     first_half_v2: Optional[ModelBenchmark] = None
     first_half_flat15: Optional[ModelBenchmark] = None

@@ -951,7 +951,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
                   WINDFOR (Day-Ahead Forecasts) & FUELHH (Outturn Generation)
                 </span>
                 <span className="text-slate-400 text-[10px] block">
-                  Official Elexon BMRS REST APIs
+                  Public Elexon BMRS REST APIs
                 </span>
               </div>
 
@@ -1156,7 +1156,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
                 onClick={() => toggleFaq("faq4")}
                 className="w-full flex items-center justify-between p-4 text-left font-bold text-slate-900 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer text-sm sm:text-base"
               >
-                <span>Is this guaranteed?</span>
+                <span>Is performance guaranteed? (No guarantee)</span>
                 {faqOpen.faq4 ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
               </button>
               {faqOpen.faq4 && (

@@ -81,7 +81,7 @@ The application comprises four integrated pages:
 
 ```mermaid
 flowchart TD
-    subgraph Elexon["Official Elexon BMRS API"]
+    subgraph Elexon["Public Elexon BMRS API"]
         WF["WINDFOR Dataset<br/>(Forecast Vintages)"]
         FHH["FUELHH Dataset<br/>(Actual Wind Outturn)"]
     end
@@ -124,7 +124,7 @@ flowchart TD
 
 ## Data Sources & Provenance
 
-Data is ingested from the official **Elexon Insights Solution / BMRS API**:
+Data is ingested from the public **Elexon Insights Solution / BMRS API**:
 
 | Series | BMRS Dataset Code | Source Endpoint | Granularity | Units | Role in Application |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -144,7 +144,7 @@ For a decision made on date $D$ for target delivery date $D+1$:
 1. **Decision Cutoff:** Fixed at or before **09:00:00 UTC** on date $D$.
 2. **Forecast Selection:** Selects the latest forecast vintage published strictly at or before 09:00 UTC on day $D$ covering intervals of target date $D+1$. Forecasts published after 09:00 UTC are strictly excluded.
 3. **Historical Calibration Selection:** Calibration uses only intervals where both the day-ahead forecast and actual generation were published at or before 09:00 UTC on day $D$.
-4. **No Future Leakage Guarantee:** Forecasts published and actuals recorded after 09:00 UTC on the decision day are never used. Verified by automated replay isolation tests (`test_no_leakage.py`).
+4. **No Future Data Leakage:** Forecasts published and actuals recorded after 09:00 UTC on the decision day are never used. Evaluated across automated replay isolation tests (`test_no_leakage.py`).
 5. **Core Premise:** We assume replacement power bought close to delivery tends to cost more than power arranged in advance. We don’t model market prices directly, so results are evaluated in physical MWh trade-offs and break-even price ratios.
 6. **January 2026 Model Benchmark Results:** Across 30 decision days (1,440 half-hours), candidate models evaluated on January 2026 data at $s=0$ (unrecoverable surplus) break even when replacement power costs more than $k^* \times$ advance power:
 
@@ -202,7 +202,7 @@ Calculated independently for Elexon raw forecast and our safe estimate.
 
 ### 2. Avoided Shortfall Energy (MWh)
 $$\text{saved\_MWh} = \text{elexon\_shortfall\_MWh} - \text{our\_shortfall\_MWh}$$
-*Honesty Guarantee:* Negative values (when our estimate underperforms) are preserved and displayed transparently.
+*Honest Reporting (No Guarantee of Net Savings):* Negative values (when our estimate underperforms) are preserved and displayed transparently.
 
 ### 3. Additional Advance-Planned Wind (MWh)
 $$\text{extra\_advance\_MWh} = \sum_{t=1}^{48} \max(0, \text{Actual}_{t,\text{GW}} - \text{Safe\_Estimate}_{t,\text{GW}}) \times 1000 \times dt$$

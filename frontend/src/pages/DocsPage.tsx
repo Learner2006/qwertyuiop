@@ -69,7 +69,7 @@ export const DocsPage: React.FC = () => {
           <span>Data Sources, Semantics & Level Bias</span>
         </h2>
         <p className="text-sm text-slate-600 leading-relaxed">
-          All data originates exclusively from the official <strong>Elexon BMRS Insights API</strong> (keyless public API):
+          All data originates exclusively from the public <strong>Elexon BMRS Insights API</strong> (keyless public API):
         </p>
         <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-3 text-xs font-mono">
           <div>
@@ -99,9 +99,9 @@ export const DocsPage: React.FC = () => {
             Over the 1,440 target slots in January 2026, Elexon's raw day-ahead forecast totaled <strong>9.52 TWh</strong> against <strong>8.25 TWh</strong> realized FUELHH outturn, running <strong>15.5% above outturn (13.4% of forecast)</strong>. Raw Elexon shortfall occurred across 16.8% of wind generation, while surplus occurred in only 1.3%.
           </p>
           <div className="p-3 bg-white rounded-lg border border-slate-200 text-slate-800 space-y-1.5 leading-relaxed">
-            <span className="font-semibold text-slate-900 block text-[11px] uppercase tracking-wider">Dataset Scoping & Official Elexon Definitions</span>
+            <span className="font-semibold text-slate-900 block text-[11px] uppercase tracking-wider">Dataset Scoping & Elexon BMRS Definitions</span>
             <p>
-              Official Elexon Insights Solution documentation confirms that WINDFOR and FUELHH describe different operational perimeters:
+              Elexon Insights Solution documentation confirms that WINDFOR and FUELHH describe different operational perimeters:
             </p>
             <ul className="list-disc list-inside space-y-1.5 text-slate-700 ml-1">
               <li><strong>WINDFOR (Day-Ahead Wind Forecast):</strong> Defined as <em>"forward-looking generation forecasts for all visible Power Park Modules (wind farms connected to the transmission system or holding operational metering visible to the ESO) in Great Britain, published up to 8 times daily"</em> (<a href="https://bmrs.elexon.co.uk/api-documentation/endpoint/datasets/WINDFOR" target="_blank" rel="noreferrer" className="underline text-sky-800">Elexon /datasets/WINDFOR</a>; accessed Oct 2026).</li>
@@ -260,9 +260,9 @@ export const DocsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-600">
           <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-2">
             <h4 className="font-bold text-slate-900 uppercase">Scope & Assumptions</h4>
-            <p>• <strong>Scope caveat:</strong> Evaluated across one month, one season (winter 2026), with model parameters (48h lookback, p75 risk percentile, 15% cold start) established in advance. Replay uses an out-of-sample rolling window respecting 09:00 UTC daily cutoffs.</p>
+            <p>• <strong>Scope caveat:</strong> Evaluated across one month, one season (winter 2026), with model parameters (48h lookback, p75 risk percentile, 15% cold start) configured prior to evaluation. Replay uses an empirical rolling calibration window respecting 09:00 UTC daily cutoffs.</p>
             <p>• <strong>Single seasonal window:</strong> Results reflect winter weather patterns and do not guarantee identical performance in summer or transitional seasons.</p>
-            <p>• <strong>Price asymmetry premise:</strong> We assume replacement power bought close to delivery tends to cost more than power arranged in advance (break-even at 1.01×). We do not model monetary prices.</p>
+            <p>• <strong>Price asymmetry premise:</strong> We assume replacement power bought close to delivery tends to cost more than power arranged in advance (break-even at 1.405× for flat 15%). We do not model monetary prices.</p>
           </div>
           <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-2">
             <h4 className="font-bold text-slate-900 uppercase">Known Limitations</h4>

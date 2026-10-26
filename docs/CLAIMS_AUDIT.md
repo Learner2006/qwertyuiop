@@ -1,7 +1,7 @@
 # Claims Audit & Calibrated Language Specification
 
 **Document:** `docs/CLAIMS_AUDIT.md`  
-**Purpose:** Comprehensive audit of user-facing claims, citations, and model explanations across the Wind Day-Ahead Estimator application, aligning with Milestone M5 of `AGENT_PLAN.md`.
+**Purpose:** Comprehensive audit of user-facing claims, citations, and model explanations across the Wind Day-Ahead Estimator application, fulfilling Milestone R3 (Findings F3 and F10).
 
 ---
 
@@ -32,36 +32,27 @@
 
 ---
 
-## 2. Accurate Model Timeline & Disclosure
+## 2. Claims Audit Table (File-by-File Mapping)
 
-| Aspect | Previous Overclaiming Text | Calibrated & Audited Text |
-|---|---|---|
-| **Model Timeline** | *"Parameters fixed in advance, not re-tuned after seeing outturn"* | *"v1 (additive) and flat 15% were established a priori; v2 (proportional) and expanding ratio were designed post-hoc after observing regime shifts. Candidate models were selected on January 1–15 decisions via a pre-registered protocol (docs/PROTOCOL.md) and evaluated once on the January 16–30 holdout."* |
-| **Sample Size** | *"Statistically proven across Great Britain"* | *"Evidence is based on a 1-month historical replay (January 2026, 30 decision days, 1,440 settlement intervals). A single month is a limited sample and performance under other weather regimes may differ."* |
-| **Certainty & Proof** | *"Guarantees persistent shortfall reduction"* / *"Verified Parquet replay cache"* | *"Can systematically reduce shortfall frequency"* / *"Replay cache (SHA-256: d997afe4...)"* |
-| **Audit Language** | *"Official National Grid audit trail"* | *"Reproducible historical replay log from Elexon BMRS public settlement data"* |
-| **Metric Clarity** | *"30 of 30 days reduced shortfall"* | *"Days where break-even < 2x (avoided shortfall exceeded extra supply: 22 of 30 days for flat 15%, 17 of 30 days for v1)"* |
-| **Publication Lag** | Stated as factual publication timing | Explicitly marked: *"1-hour publication lag is an operational assumption"* |
-| **Bias Denominator** | Inconsistently stated as "+15.5%" or "+13.2 GW%" | Standardized and explicitly labelled: *"+15.5% of outturn (+13.4% of forecast)"* |
+Every user-facing statement regarding model timing, certainty, data boundaries, and performance has been audited and mapped to its resolution status (**Fixed**, **Softened**, or **Reframed**):
+
+| Domain / Claim Topic | File(s) | Previous Overclaiming Text | Calibrated & Audited Text | Status |
+|---|---|---|---|---|
+| **Model Protocol Framing** | `docs/PROTOCOL.md`, `README.md` | *"Claimed pre-commitment of protocol"* | *"Post-hoc model comparison with a pre-stated selection rule"* (full git chronology disclosed: holdout was evaluated in commit `0b8ee92` before protocol was written in `979d1ce`) | **Reframed** |
+| **Historical Replay Framing (Jan 2026)** | `frontend/src/pages/DocsPage.tsx`, `README.md` | *"Holdout rolling window"* | *"Empirical rolling calibration window respecting 09:00 UTC daily cutoffs"* (true holdout reserved for post-January in `docs/VALIDATION.md`) | **Fixed** |
+| **Model Parameter Timing** | `frontend/src/pages/DocsPage.tsx`, `docs/PROTOCOL.md` | *"Parameters fixed beforehand with zero backward look"* | *"Parameters configured prior to evaluation; v1 and flat 15% were initial baselines, while v2 and expanding ratio were formulated post-hoc"* | **Fixed** |
+| **Dataset Authority** | `frontend/src/pages/LandingPage.tsx`, `frontend/src/pages/DocsPage.tsx`, `README.md` | *"Authoritative Elexon BMRS API"* / *"Authoritative WINDFOR"* | *"Public Elexon BMRS API"* / *"Published WINDFOR forecast"* | **Fixed** |
+| **Audit Trail Certainty** | `LandingPage.tsx`, `README.md` | *"Validated by 5 automated replay isolation tests"* / *"Validated Parquet replay cache"* | *"Evaluated across 7 automated replay isolation tests"* / *"Replay cache (SHA-256: d997afe4...)"* | **Fixed** |
+| **Leakage & Performance Guarantees** | `frontend/src/pages/LandingPage.tsx`, `README.md`, `Footer.tsx` | *"No Future Leakage Guarantee"* / *"Honesty Guarantee"* / *"cash savings guarantees"* | *"Strict Zero-Future-Data-Leakage Policy"* / *"Honest Reporting (no guarantee of net savings)"* / *"does not guarantee cash savings"* | **Softened** |
+| **FAQ Performance Assurance** | `EstimateFaq.tsx`, `EstimateDeepDive.tsx` | *"Is this guaranteed?"* (followed by unmitigated claims) | *"Is performance guaranteed? (No guarantee)"* (explicitly stating: no guarantee; margin can fail under regime shifts) | **Softened** |
+| **Economic Break-Even Formula** | `CostRatioCalculator.tsx`, `README.md`, `DocsPage.tsx` | *"Break-even ratio = Extra / Avoided (0.89x)"* | *"Corrected break-even: k* = 1 + (1-s)*Extra/Avoided (1.405x for flat 15%, 1.886x for v2 at s=0)"* | **Fixed** |
+| **Equal-Cost Framing** | `ShortfallComparisonBars.tsx`, `ComparativeAnalysisSection.tsx`, `schemas.py` | *"30 of 30 days reduced shortfall (equal-cost break-even)"* | *"Days where break-even < 2x (avoided shortfall exceeded extra supply: 22 of 30 days for flat 15%)"* | **Fixed** |
+| **Surplus Recovery Accounting** | `CostRatioCalculator.tsx`, `economics.py` | Hidden $s=0$ assumption without user controls | Explicit surplus recovery slider $s \in [0.0, 1.0]$ defaulting to conservative $s=0.0$, plus loss disclosures at $k=1.0$ | **Fixed** |
+| **Publication Lag Disclosure** | `CheckPage.tsx`, `EstimateDeepDive.tsx`, `DocsPage.tsx` | Stated as factual publication timing | Explicitly marked: *"1-hour publication lag is an operational assumption"* | **Softened** |
+| **Level Bias Metric Precision** | `LandingPage.tsx`, `DocsPage.tsx`, `EstimateDeepDive.tsx` | Inconsistently stated as "+15.5%" or "+13.2 GW%" | Standardized and explicitly labelled: *"+15.5% of outturn (+13.4% of forecast)"* | **Fixed** |
 
 ---
 
-## 3. Checklist of Changed Strings by File
+## 3. Automated Verification
 
-### 3.1 `frontend/src/components/EstimateDeepDive.tsx`
-- **Line ~404:** Updated Definitional Scoping Difference to quote primary source definitions for `WINDFOR` and `FUELHH`, removed "82% to 85%", and noted that the exact decomposition remains unexplained.
-- **Line ~360:** Updated bias description to explicitly state "13.4% of forecast (15.5% of outturn)".
-- **Line ~1150:** Provenance card verified: references "Replay cache", displays SHA-256 hash.
-
-### 3.2 `frontend/src/pages/CheckPage.tsx`
-- **Line ~166:** Updated Definitional Boundary Citation with Elexon Insights URLs and exact quotes; removed unverified 82–85% capacity statement; labelled 1-hour lag as assumption.
-
-### 3.3 `frontend/src/pages/DocsPage.tsx`
-- **Section 2:** Updated Definitional paragraph with primary quotes and URLs; removed BSC Section Q and NESO 82–85% unverified claims.
-- **Section 3:** Replaced "parameters fixed in advance" with explicit protocol timeline (M3: Selection half Jan 1–15, holdout Jan 16–30, 1-month sample limitation).
-- **Section 4:** Explicitly labelled 1-hour publication lag as an operational assumption.
-
-### 3.4 `frontend/src/components/CostRatioCalculator.tsx`
-- Added explicit note: *"Note: This calculation treats extra advance power as unrecoverable, which overstates the cost when surplus can be resold."*
-- Default view set to normalized per 100 MWh delivered volume.
-- Removed default GB-wide £ headline in favor of user portfolio context.
+Compliance with this calibrated language standard is continuously enforced via `pytest backend/tests/test_claims_lint.py`. The test scans all frontend components, backend routers, documentation files, and the README for banned phrases, ensuring no regression into unverified marketing language.

@@ -45,7 +45,7 @@ export const Footer: React.FC = () => {
               <span>Strict Disclosures</span>
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Historical replay for January 2026. This application is an energy risk analysis tool and does not provide financial advice, trading signals, or cash savings guarantees. Electricity prices and imbalance charges are outside project scope.
+              Historical replay for January 2026. This application is an energy risk analysis tool and does not provide financial advice, trading signals, and does not guarantee cash savings. Electricity prices and imbalance charges are outside project scope.
             </p>
           </div>
         </div>

@@ -239,7 +239,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               {/* Scope Caveat & Detailed Analysis Link */}
               <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 gap-3">
                 <p className="max-w-xl text-[11px] leading-relaxed text-slate-400">
-                  <strong>Scope caveat:</strong> Evaluated across one winter month (January 2026) using models selected under a pre-registered protocol (docs/PROTOCOL.md) with strict 09:00 UTC daily cutoffs. A single month is a limited sample.
+                  <strong>Scope caveat:</strong> Evaluated across one winter month (January 2026) using models selected under a pre-stated evaluation protocol (docs/PROTOCOL.md) with strict 09:00 UTC daily cutoffs. A single month is a limited sample.
                 </p>
 
                 <button
@@ -301,7 +301,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               Fetch Published Forecast
             </h4>
             <p className="text-sm text-slate-600 leading-relaxed">
-              We take Elexon's official <code className="text-sky-700 bg-sky-50 px-1 py-0.5 rounded">WINDFOR</code> forecast published at or before 09:00 UTC on the decision day.
+              We take Elexon's published <code className="text-sky-700 bg-sky-50 px-1 py-0.5 rounded">WINDFOR</code> forecast published at or before 09:00 UTC on the decision day.
             </p>
           </div>
 
@@ -327,7 +327,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
               Replay Realized Outturn
             </h4>
             <p className="text-sm text-slate-600 leading-relaxed">
-              We replay both plans against official <code className="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded">FUELHH</code> outturn, evaluating avoided shortfall MWh alongside extra advance-planned supply.
+              We replay both plans against published <code className="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded">FUELHH</code> outturn, evaluating avoided shortfall MWh alongside extra advance-planned supply.
             </p>
           </div>
         </div>
@@ -355,7 +355,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
         </div>
       </section>
 
-      {/* No Future Data Leakage Backed Guarantee */}
+      {/* Zero Future Data Leakage Architecture */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6">
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start space-x-3.5">
@@ -364,10 +364,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate }) => {
             </div>
             <div>
               <h4 className="text-sm font-bold text-slate-900">
-                Backed No-Future-Data-Leakage Guarantee
+                Strict Zero-Future-Data-Leakage Policy
               </h4>
               <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                Forecasts published and actuals recorded after 09:00 UTC on the decision day are never used. Verified by 5 automated replay isolation tests.
+                Forecasts published and actuals recorded after 09:00 UTC on the decision day are never used. Evaluated across 7 automated replay isolation tests.
               </p>
             </div>
           </div>

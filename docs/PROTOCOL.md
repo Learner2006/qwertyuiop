@@ -1,6 +1,6 @@
 # Model Decision Protocol & Selection Specification
 
-**Status:** Pre-registered Protocol  
+**Status:** Post-hoc model comparison with a pre-stated selection rule  
 **Date:** January 2026 (Documented for Audit)  
 **Evaluation Cutoff:** January 1–15, 2026 Decisions  
 **Holdout Range:** January 16–30, 2026 Decisions  
@@ -9,7 +9,22 @@
 
 ## 1. Objective and Principles
 
-The objective of this protocol is to establish a rigorous, objective, and auditable methodology for selecting the headline production model for the Wind Day-Ahead Estimator. To prevent p-hacking, overfitting, and post-hoc rationalization, model selection is governed by a pre-registered rule evaluated strictly on the **Selection Window (January 1–15 decisions)** before examining or tuning against the **Holdout Window (January 16–30 decisions)**.
+The objective of this protocol is to establish a rigorous, objective, and auditable methodology for evaluating candidate production models for the Wind Day-Ahead Estimator. Model selection is governed by a pre-stated decision rule evaluated on the **Selection Window (January 1–15 decisions)** alongside the **Holdout Window (January 16–30 decisions)**.
+
+---
+
+## 1.1 Chronology and Limitations
+
+Full disclosure of the git history and development sequence:
+1. **Holdout window was evaluated before this protocol document was committed:**
+   - Commit `0b8ee92` (20:25 UTC) already had holdout window outcomes computed and analyzed.
+   - Commit `979d1ce` (20:49 UTC) wrote the initial protocol document retroactively framing it as an a priori protocol.
+2. **Protocol updates:**
+   - Commit `ed0e943` updated the protocol to formalize the three-stage selection rule.
+   - Commit `975a5ef` introduced `expanding_ratio` post-hoc after seeing holdout and full-month results.
+3. **Audit classification:**
+   - This document is therefore classified as a **post-hoc model comparison with a pre-stated selection rule**, not an *a priori* frozen experiment.
+   - Genuine validation on new unseen data requires post-January data, executed under Milestone R4 in `docs/VALIDATION.md`.
 
 ---
 
@@ -145,5 +160,5 @@ Generated via `python3 scripts/evaluate_models.py` on 2026-10-25.
 * **Headline Model:** `flat_15` (15% static uniform haircut).
 * **Percentile Controls:** Maintained as an optional caution slider on Estimate and Check pages (allowing user risk preferences: p60, p75, p85, p90) but documented honestly as an empirical risk adjustment rather than the primary source of the base structural haircut.
 * **Pre-selection Commit Hash:** `979d1ce`
-* **Frozen Protocol Commit:** (recorded in git log)
+* **Frozen Protocol Commit:** `ed0e943`
 
