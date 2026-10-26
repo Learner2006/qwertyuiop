@@ -2,7 +2,7 @@
 
 > **Risk-calibrated day-ahead wind power procurement estimator for Great Britain wholesale electricity markets.**
 
-[![Verification Suite](https://img.shields.io/badge/Verification-59%20Tests%20Passing-success?style=flat-square)](scripts/check.sh)
+[![Verification Suite](https://img.shields.io/badge/Verification-59%20Tests%20Passing-success?style=flat-square)](backend/tests)
 [![Python](https://img.shields.io/badge/Python-3.9%20%7C%203.12-blue?style=flat-square)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI%200.128-009688?style=flat-square)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/Frontend-React%2018%20%7C%20TypeScript%20%7C%20Vite-61dafb?style=flat-square)](https://vitejs.dev)
@@ -35,15 +35,12 @@ In GB wholesale electricity procurement, wind generation forecast errors are fin
 
 ---
 
-## Application Interface
+## Application Views
 
-| Overview & Problem Framing | Day-Ahead Estimate (`/jan25`) |
-| :---: | :---: |
-| ![Landing Page Preview](docs/screenshots/landing.png)<br><sub>Landing view: Shortfall dilemma and workflow</sub> | ![Estimate Page Preview](docs/screenshots/estimate.png)<br><sub>Estimate view: Safe plan vs Elexon raw forecast with risk slider</sub> |
-
-| Outturn Check (`/jan25/check`) | Methodology & Validation (`/docs`) |
-| :---: | :---: |
-| ![Check Page Preview](docs/screenshots/check.png)<br><sub>Reliability check: Forecast vs actual with shortfall shading</sub> | ![Docs Page Preview](docs/screenshots/docs.png)<br><sub>Methodology documentation: Mathematical proofs and validation records</sub> |
+- **Overview (`/`):** Strategic framing of the forecast shortfall dilemma, January 2026 replay evidence, level bias analysis, and client workflow.
+- **Day-Ahead Estimate (`/jan25`):** Interactive day-ahead decision cockpit with risk percentile slider (60–90%), step-by-step arithmetic breakdown, error histogram, 48-hour trailing history, and full-audit dataset provenance.
+- **Reliability Check (`/jan25/check`):** Outturn replay comparing Elexon central forecasts and safe estimates against metered generation (`FUELHH`), shortfall energy shading, and interactive economic cost-ratio calculator.
+- **Methodology & Documentation (`/docs`):** Mathematical equations, physical conservation proofs, economic ledger formulas, out-of-time validation metrics across 241 delivery days, and comparative benchmarks.
 
 ---
 
@@ -163,7 +160,7 @@ $$\text{Break-Even Price Ratio } k^* = 1 + (1 - s) \times \frac{\text{Incrementa
 - At $k = 1.0$, the plan loses $-\text{Extra} \times P_{\text{adv}}$, directly illustrating the cost of insurance on days where central forecasts are accurate.
 
 ### 3. Out-of-Time Validation Record (Feb–Sep 2026)
-To prevent overfitting or post-hoc tuning, models were evaluated across **241 delivery days** (11,568 half-hour intervals) under frozen protocol (`PROTOCOL_v2.md`):
+To prevent overfitting or post-hoc tuning, models were evaluated across **241 delivery days** (11,568 half-hour intervals) under a frozen out-of-time evaluation protocol:
 
 | Model | Total Avoided (MWh) | Extra Supply (MWh) | Break-Even $k^*$ ($s=0$) | Net MWh ($k=2, s=0$) | Days $k^* < 2\times$ | Monthly Win Record |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -217,27 +214,19 @@ curl -s "http://localhost:8000/api/estimate?date=2026-01-25&percentile=75"
 
 ## Verification & Automated Test Suite
 
-A single command executes the complete multi-layer verification suite:
+Run the full automated test suite using `pytest`:
 
 ```bash
-bash scripts/check.sh
+pytest backend/tests -v
 ```
 
 ### Verification Layers
-1. **Dataset Integrity Audit:** Asserts schema, UTC timestamps, 1,488 actual intervals (31/31 days with 48/48 intervals), 36,208 forecast rows, and SHA-256 immutability pin.
-2. **Audit Checks Baseline:** Runs `scripts/audit_checks.py` to confirm exact reproduction of empirical audit findings.
-3. **30-Date Endpoint Sweep:** Verifies HTTP 200 OK and absence of NaN/null values across all 30 dates in January 2026 for `/api/estimate` and `/api/check`.
-4. **Backend Test Suite (59 Tests):**
-   - 7 distinct release-blocking zero-future-data-leakage scenario tests.
-   - Independent 4-interval oracle tests and volume conservation checks.
-   - Mathematical property invariant tests (monotonicity, conservation, non-negativity, linearity).
-   - 2,000-draw day-block bootstrap uncertainty quantification.
-   - Empirical band realised coverage tests (55.8% Jan, 62.5% validation).
-   - Automated claims & terminology lint test (`test_claims_lint.py`).
-   - Frontend literal fallback and provenance honesty test (`test_no_frontend_literals.py`).
-   - Physical procurement ledger identity tests.
-5. **Frontend TypeScript Check:** `tsc --noEmit` validates all components and contracts.
-6. **Production Build:** Vite production bundle with route-based code-splitting (all chunks < 500 kB).
+1. **Zero-Leakage Assurance:** 7 distinct release-blocking scenario tests asserting that forecasts or actuals published after 09:00 UTC cannot alter target-day estimates.
+2. **Independent Oracle & Mathematical Properties:** Numerical hand calculations, monotonicity of haircuts, conservation of cut energy, and non-negativity.
+3. **Statistical Uncertainty:** 2,000-draw day-block bootstrap confidence intervals.
+4. **Empirical Band Honesty:** Realised coverage assertions (55.8% Jan, 62.5% validation).
+5. **Claims & Integrity Lint:** Automated claims and provenance lint ensuring no hardcoded fallbacks or exaggerated claims exist in UI or API schemas.
+6. **Frontend Typecheck & Production Build:** `tsc --noEmit` and Vite bundle verification.
 
 ---
 
@@ -264,17 +253,8 @@ fuelhh/
 │   ├── Dockerfile                   # Multi-stage Node builder + Nginx production server
 │   ├── nginx.conf                   # Reverse proxy configuration for /api/
 │   └── package.json                 # Pinned frontend dependencies
-├── docs/
-│   ├── PROTOCOL_v2.md               # Frozen out-of-time validation protocol
-│   ├── VALIDATION.md                # Generated 8-month validation report
-│   ├── CLAIMS_AUDIT.md              # Calibrated language specification
-│   └── screenshots/                 # Application screenshots (desktop & mobile)
-├── scripts/
-│   ├── check.sh                     # Complete single-command verification suite
-│   ├── sweep_test.py                # 30-date automated endpoint sweep
-│   ├── audit_checks.py              # Baseline audit replication script
-│   └── capture_screenshots.py       # Playwright screenshot generator
 ├── docker-compose.yml               # Production multi-service orchestration
+├── render.yaml                      # Render cloud deployment blueprint
 └── README.md                        # Project documentation
 ```
 

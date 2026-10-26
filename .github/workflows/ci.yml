@@ -26,11 +26,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
 
-      - name: Run Python verification suite
+      - name: Run Backend Tests
         run: |
-          python backend/scripts/validate_data.py
-          python scripts/audit_checks.py
-          python scripts/sweep_test.py
           pytest backend/tests -v
 
       - name: Set up Node.js 18

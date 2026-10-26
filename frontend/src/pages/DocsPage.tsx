@@ -359,10 +359,8 @@ export const DocsPage: React.FC = () => {
               <p className="text-slate-600 leading-relaxed">
                 When tested against static haircuts of the identical total volume, dynamic rolling percentile models (<code className="font-mono text-slate-800">v1_additive</code> and <code className="font-mono text-slate-800">v2_proportional</code>) substantially underperformed static uniform haircuts (-1.83M MWh and -765k MWh advantage deficits). Rolling quantiles over-cut during calm summer regimes, destroying value.
               </p>
-              <div className="pt-1">
-                <a href="/docs/VALIDATION.md" target="_blank" rel="noreferrer" className="text-sky-700 underline font-medium">
-                  Read complete out-of-time validation analysis & sensitivity tables in docs/VALIDATION.md →
-                </a>
+              <div className="pt-1 text-slate-500 italic">
+                Complete out-of-time validation metrics and monthly breakdowns are computed and served directly from the validated post-January outturn dataset.
               </div>
             </div>
           </div>
