@@ -1,6 +1,7 @@
 """Tests for backend/app/services/prepare.py data preparation and loading logic."""
 
 import datetime
+import hashlib
 import pytest
 import pandas as pd
 from app.services.prepare import DataManager
@@ -77,3 +78,14 @@ def test_target_actuals(data_manager):
         assert act["settlement_period"] == idx + 1
         assert act["generation_gw"] > 0
         assert act["generation_mw"] == pytest.approx(act["generation_gw"] * 1000.0, rel=1e-5)
+
+
+def test_parquet_sha256_immutable():
+    """Pin the SHA-256 hash of jan2026.parquet to enforce immutability."""
+    expected_sha256 = "d997afe42e53663a4dbef2c597da8f515d5490d7fbb159370b28fbb5c9a95f98"
+    h = hashlib.sha256()
+    with open(settings.DATA_PATH, "rb") as f:
+        while chunk := f.read(65536):
+            h.update(chunk)
+    assert h.hexdigest() == expected_sha256
+
