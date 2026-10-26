@@ -146,14 +146,14 @@ For a decision made on date $D$ for target delivery date $D+1$:
 3. **Historical Calibration Selection:** Calibration uses only intervals where both the day-ahead forecast and actual generation were published at or before 09:00 UTC on day $D$.
 4. **No Future Leakage Guarantee:** Forecasts published and actuals recorded after 09:00 UTC on the decision day are never used. Verified by automated replay isolation tests (`test_no_leakage.py`).
 5. **Core Premise:** We assume replacement power bought close to delivery tends to cost more than power arranged in advance. We don’t model market prices directly, so results are evaluated in physical MWh trade-offs and break-even price ratios.
-6. **January 2026 Model Benchmark Results:** Across 30 decision days (1,440 half-hours), all four candidate models evaluated under our pre-registered protocol (`docs/PROTOCOL.md`) achieved net-positive break-even performance:
+6. **January 2026 Model Benchmark Results:** Across 30 decision days (1,440 half-hours), candidate models evaluated on January 2026 data at $s=0$ (unrecoverable surplus) break even when replacement power costs more than $k^* \times$ advance power:
 
-| Model | Status | Avoided Shortfall (MWh) | Incremental Extra (MWh) | Break-Even ($k^*$) | Equal-Cost Positive Days |
+| Model | Status | Avoided Shortfall (MWh) | Incremental Extra (MWh) | Break-Even ($k^*$) | Days where break-even < 2x |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`flat_15`** | **Selected Production Headline (M3 Rule)** | **1,016,662 MWh** | **411,934 MWh** | **0.405×** | **22 / 30 days** |
-| `expanding_ratio` | Exploratory (Realization Ratio) | 880,901 MWh | 313,619 MWh | 0.356× | 22 / 30 days |
-| `v2_proportional` | Exploratory (Relative Error p75) | 1,022,628 MWh | 905,978 MWh | 0.886× | 18 / 30 days |
-| `v1_additive` | Pre-declared Baseline (p75) | 968,903 MWh | 985,528 MWh | 1.017× | 17 / 30 days |
+| **`flat_15`** | **Selected Production Headline (M3 Rule)** | **1,016,662 MWh** | **411,934 MWh** | **1.405×** | **22 / 30 days** |
+| `expanding_ratio` | Exploratory (Realization Ratio) | 880,901 MWh | 313,619 MWh | 1.356× | 22 / 30 days |
+| `v2_proportional` | Exploratory (Relative Error p75) | 1,022,628 MWh | 905,978 MWh | 1.886× | 18 / 30 days |
+| `v1_additive` | Pre-declared Baseline (p75) | 968,903 MWh | 985,528 MWh | 2.017× | 17 / 30 days |
 
 Raw Elexon forecast: 9,523,977 MWh vs 8,247,142 MWh actual outturn (+15.5% of outturn, +13.4% of forecast; raw shortfall: 1,385,929 MWh). Both sides (avoided shortfall and extra supply) are reported strictly from API calculations. Full selection protocol and holdout results are recorded in [`docs/PROTOCOL.md`](docs/PROTOCOL.md).
 

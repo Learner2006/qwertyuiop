@@ -65,7 +65,6 @@ export interface MonthSummaryResponse {
   total_elexon_surplus_mwh: number;
   total_safe_surplus_mwh: number;
   total_incremental_surplus_mwh: number;
-  total_extra_advance_planned_mwh: number;
   elexon_surplus_pct_of_wind: number;
   safe_surplus_pct_of_wind: number;
   incremental_surplus_pct_of_wind: number;
@@ -121,7 +120,7 @@ export interface MonthSummaryResponse {
 
   days_shortfall_reduced: number;
   days_shortfall_increased: number;
-  days_breakeven_count?: number;
+  days_break_even_under_2x?: number;
   summary_sentence: string;
 }
 
@@ -199,7 +198,7 @@ export interface CompletedTrackRecordDay {
   avoided_shortfall_mwh: number;
   extra_supply_mwh: number;
   is_shortfall_reduced: boolean;
-  is_breakeven?: boolean;
+  is_break_even_under_2x?: boolean;
 }
 
 export interface CompletedTrackRecord {
@@ -208,7 +207,7 @@ export interface CompletedTrackRecord {
   total_extra_supply_mwh: number;
   days_reduced_count: number;
   days_increased_count: number;
-  days_breakeven_count?: number;
+  days_break_even_under_2x?: number;
   daily_records: CompletedTrackRecordDay[];
 }
 
@@ -289,10 +288,9 @@ export interface CheckResponse {
   elexon_shortfall_mwh: number;
   safe_shortfall_mwh: number;
   saved_shortfall_mwh: number;
-  elexon_surplus_mwh?: number;
-  safe_surplus_mwh?: number;
-  incremental_surplus_mwh?: number;
-  extra_advance_planned_mwh: number;
+  elexon_surplus_mwh: number;
+  safe_surplus_mwh: number;
+  incremental_surplus_mwh: number;
   v2_safe_headline_gw?: number;
   v2_safe_shortfall_mwh?: number;
   v2_saved_shortfall_mwh?: number;

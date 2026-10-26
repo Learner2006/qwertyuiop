@@ -10,19 +10,27 @@ from app.main import app
 client = TestClient(app)
 
 
-def calculate_scenario(avoided_mwh: float, extra_mwh: float, k: float, price: float = 70.0):
+def calculate_scenario(
+    avoided_mwh: float,
+    extra_mwh: float,
+    k: float,
+    s: float = 0.0,
+    price: float = 70.0,
+):
     """Replicates frontend calculator scenario arithmetic."""
     replacement_price = k * price
-    avoided_value = avoided_mwh * (k * price)
-    extra_cost = extra_mwh * price
-    net_savings = avoided_value - extra_cost
-    net_mwh = (avoided_mwh * k) - extra_mwh
-    breakeven_k = extra_mwh / avoided_mwh if avoided_mwh > 0 else 1.0
+    avoided_premium_value = avoided_mwh * (k - 1.0) * price
+    extra_unrecovered_cost = extra_mwh * (1.0 - s) * price
+    net_mwh = avoided_mwh * (k - 1.0) - extra_mwh * (1.0 - s)
+    net_savings = net_mwh * price
+    breakeven_k = (
+        1.0 + (1.0 - s) * (extra_mwh / avoided_mwh) if avoided_mwh > 0 else 1.0
+    )
     return {
         "k": k,
         "replacement_price": replacement_price,
-        "avoided_value": avoided_value,
-        "extra_cost": extra_cost,
+        "avoided_premium_value": avoided_premium_value,
+        "extra_unrecovered_cost": extra_unrecovered_cost,
         "net_savings": net_savings,
         "net_mwh": net_mwh,
         "breakeven_k": breakeven_k,
@@ -40,34 +48,40 @@ def test_calculator_reproduces_summary_models():
         "v1_additive": (
             data["total_avoided_shortfall_mwh"],
             data["total_incremental_surplus_mwh"],
-            data["breakeven_ratio"]
+            data["breakeven_ratio"],
         ),
         "v2_proportional": (
             data["v2_proportional_benchmark"]["avoided_shortfall_mwh"],
             data["v2_proportional_benchmark"]["extra_supply_mwh"],
-            data["v2_proportional_benchmark"]["breakeven_ratio"]
+            data["v2_proportional_benchmark"]["breakeven_ratio"],
         ),
         "flat_15": (
             data["flat_15_benchmark"]["avoided_shortfall_mwh"],
             data["flat_15_benchmark"]["extra_supply_mwh"],
-            data["flat_15_benchmark"]["breakeven_ratio"]
+            data["flat_15_benchmark"]["breakeven_ratio"],
         ),
     }
 
-    k_values = [1.0, 1.5, 2.0, 3.0]
+    k_values = [1.5, 2.0, 3.0]
     price = 70.0
 
     for name, (avoided, extra, expected_be) in models.items():
-        computed_be = extra / avoided
+        computed_be = 1.0 + extra / avoided
         assert computed_be == pytest.approx(expected_be, abs=0.01)
 
         for k in k_values:
-            sc = calculate_scenario(avoided, extra, k, price)
+            sc = calculate_scenario(avoided, extra, k, s=0.0, price=price)
             assert sc["replacement_price"] == pytest.approx(k * price, abs=1e-5)
-            assert sc["avoided_value"] == pytest.approx(avoided * k * price, abs=1e-3)
-            assert sc["extra_cost"] == pytest.approx(extra * price, abs=1e-3)
-            assert sc["net_savings"] == pytest.approx((avoided * k - extra) * price, abs=1e-3)
-            assert sc["net_mwh"] == pytest.approx((avoided * k) - extra, abs=1e-3)
+            assert sc["avoided_premium_value"] == pytest.approx(
+                avoided * (k - 1.0) * price, abs=1e-3
+            )
+            assert sc["extra_unrecovered_cost"] == pytest.approx(
+                extra * price, abs=1e-3
+            )
+            assert sc["net_savings"] == pytest.approx(
+                (avoided * (k - 1.0) - extra) * price, abs=1e-3
+            )
+            assert sc["net_mwh"] == pytest.approx((avoided * (k - 1.0)) - extra, abs=1e-3)
             assert (sc["net_savings"] > 0) == (k > computed_be)
 
 
@@ -78,17 +92,19 @@ def test_calculator_reproduces_estimate_completed_days():
     data = resp.json()
 
     tr = data["completed_track_record"]
-    assert tr["completed_days_count"] == 23 # Jan 2 through Jan 24
+    assert tr["completed_days_count"] == 23  # Jan 2 through Jan 24
 
     avoided = tr["total_avoided_shortfall_mwh"]
     extra = tr["total_extra_supply_mwh"]
 
-    computed_be = extra / avoided
-    # Verified break-even for Jan 25 completed days is ~1.178x
-    assert computed_be == pytest.approx(1.178, abs=0.05)
+    computed_be = 1.0 + extra / avoided
+    # Verified break-even for Jan 25 completed days is 1.0 + 1.178 = ~2.178x
+    assert computed_be == pytest.approx(2.178, abs=0.05)
 
     price = 70.0
-    for k in [1.0, 1.5, 2.0, 3.0]:
-        sc = calculate_scenario(avoided, extra, k, price)
-        assert sc["net_savings"] == pytest.approx((avoided * k - extra) * price, abs=0.1)
-        assert sc["net_mwh"] == pytest.approx((avoided * k) - extra, abs=0.1)
+    for k in [1.5, 2.0, 3.0]:
+        sc = calculate_scenario(avoided, extra, k, s=0.0, price=price)
+        assert sc["net_savings"] == pytest.approx(
+            (avoided * (k - 1.0) - extra) * price, abs=0.1
+        )
+        assert sc["net_mwh"] == pytest.approx((avoided * (k - 1.0)) - extra, abs=0.1)

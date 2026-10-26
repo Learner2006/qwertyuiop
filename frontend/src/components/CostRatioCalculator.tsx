@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Calculator } from "lucide-react";
+import { Calculator, Info } from "lucide-react";
 
 interface CostRatioCalculatorProps {
   avoidedMwh?: number;
@@ -33,6 +33,7 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
   allowModelSelection = false,
 }) => {
   const [advancePrice, setAdvancePrice] = useState<number>(70);
+  const [surplusRecovery, setSurplusRecovery] = useState<number>(0.0); // s in [0, 1]
   const [selectedModel, setSelectedModel] = useState<"flat15" | "v1" | "v2">("flat15");
   const [volumeMode, setVolumeMode] = useState<"per100" | "custom" | "national">("per100");
   const [customPortfolioMwh, setCustomPortfolioMwh] = useState<number>(10000);
@@ -59,9 +60,12 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
   // Scale volume depending on chosen volume scope
   let scaleFactor = 1.0;
 
-  const effectiveTotalGen = totalGenerationMwh && totalGenerationMwh > 0
-    ? totalGenerationMwh
-    : (baseAvoidedMwh > 0 ? baseAvoidedMwh * 10 : 1.0);
+  const effectiveTotalGen =
+    totalGenerationMwh && totalGenerationMwh > 0
+      ? totalGenerationMwh
+      : baseAvoidedMwh > 0
+      ? baseAvoidedMwh * 10
+      : 1.0;
 
   if (volumeMode === "per100") {
     // Normalised per 100 MWh delivered
@@ -74,19 +78,25 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
   const activeAvoidedMwh = baseAvoidedMwh * scaleFactor;
   const activeExtraMwh = baseExtraMwh * scaleFactor;
 
-  const breakevenK = activeAvoidedMwh > 0 ? activeExtraMwh / activeAvoidedMwh : 1.0;
-  const kValues = [1.0, 1.5, 2.0, 3.0];
+  // Correct economic break-even: k* = 1 + (1 - s) * extra / avoided
+  const breakevenK =
+    activeAvoidedMwh > 0
+      ? 1.0 + (1.0 - surplusRecovery) * (activeExtraMwh / activeAvoidedMwh)
+      : null;
+
+  const kValues = [1.5, 2.0, 3.0];
 
   const calculateScenario = (k: number) => {
-    const avoidedValue = activeAvoidedMwh * (k * advancePrice);
-    const extraCost = activeExtraMwh * advancePrice;
-    const netSavings = avoidedValue - extraCost;
-    const netMwh = activeAvoidedMwh * k - activeExtraMwh;
+    // Net energy position = avoided * (k - 1) - extra * (1 - s)
+    const netMwh = activeAvoidedMwh * (k - 1.0) - activeExtraMwh * (1.0 - surplusRecovery);
+    const netSavings = netMwh * advancePrice;
+    const avoidedPremiumValue = activeAvoidedMwh * (k - 1.0) * advancePrice;
+    const extraUnrecoveredCost = activeExtraMwh * (1.0 - surplusRecovery) * advancePrice;
     return {
       k,
       replacementPrice: k * advancePrice,
-      avoidedValue,
-      extraCost,
+      avoidedPremiumValue,
+      extraUnrecoveredCost,
       netSavings,
       netMwh,
       isPositive: netSavings > 0,
@@ -135,7 +145,7 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
           <p className="text-xs text-slate-600">{subtitle}</p>
         </div>
 
-        {/* Optional Model Selector Tabs (Shown only when allowModelSelection=true, e.g. on CheckPage) */}
+        {/* Optional Model Selector Tabs */}
         {allowModelSelection && (
           <div className="flex items-center p-1 bg-slate-100 rounded-lg text-xs font-semibold self-start sm:self-auto">
             <button
@@ -173,11 +183,11 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
       </div>
 
       {/* Input Controls & Volume Scope Selector */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
         {/* Advance Price Input */}
         <div className="space-y-1.5">
           <label className="font-semibold text-slate-700 flex items-center space-x-1">
-            <span>Advance Base Power Price (£/MWh)</span>
+            <span>Advance Base Price (£/MWh)</span>
           </label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-sm">
@@ -197,7 +207,28 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
             />
           </div>
           <span className="text-[11px] text-slate-500">
-            Editable example: £70/MWh (adjust to match your day-ahead power contract)
+            Base day-ahead contract price (£70 default)
+          </span>
+        </div>
+
+        {/* Surplus Recovery Input s */}
+        <div className="space-y-1.5">
+          <label className="font-semibold text-slate-700 block">
+            Surplus Recovery (s)
+          </label>
+          <select
+            value={surplusRecovery}
+            onChange={(e) => setSurplusRecovery(Number(e.target.value))}
+            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg font-sans font-medium text-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
+          >
+            <option value={0.0}>0% (conservative: surplus unrecoverable)</option>
+            <option value={0.25}>25% (partial imbalance resale)</option>
+            <option value={0.5}>50% (half advance price recovery)</option>
+            <option value={0.75}>75% (liquid intraday resale)</option>
+            <option value={1.0}>100% (full value recovery)</option>
+          </select>
+          <span className="text-[11px] text-slate-500">
+            Resale value of unneeded advance wind power
           </span>
         </div>
 
@@ -215,7 +246,7 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              National GB Total
+              National Total
             </button>
             <button
               onClick={() => setVolumeMode("per100")}
@@ -235,7 +266,7 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Your Portfolio
+              Portfolio
             </button>
           </div>
           {volumeMode === "custom" ? (
@@ -251,15 +282,15 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
                 }}
                 className="w-24 px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
-              <span className="text-[11px] text-slate-500 font-mono">MWh delivered volume</span>
+              <span className="text-[11px] text-slate-500 font-mono">MWh volume</span>
             </div>
           ) : volumeMode === "per100" ? (
             <span className="text-[11px] text-slate-500 block">
-              Normalized payoff per 100 MWh delivered (removes GB grid scale)
+              Normalized per 100 MWh delivered
             </span>
           ) : (
             <span className="text-[11px] text-slate-500 block">
-              100% GB national transmission wind volume ({contextLabel})
+              100% GB national wind ({contextLabel})
             </span>
           )}
         </div>
@@ -270,21 +301,23 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
             Break-Even Multiplier (k*)
           </span>
           <div className="flex items-baseline space-x-2">
-            <span className="text-xl font-bold font-mono text-sky-800">{breakevenK.toFixed(3)}×</span>
-            <span className="text-xs text-slate-500">
-              (£{(breakevenK * advancePrice).toFixed(1)}/MWh)
+            <span className="text-xl font-bold font-mono text-sky-800">
+              {breakevenK !== null ? `${breakevenK.toFixed(3)}×` : "N/A"}
             </span>
+            {breakevenK !== null && (
+              <span className="text-xs text-slate-500">
+                (£{(breakevenK * advancePrice).toFixed(1)}/MWh)
+              </span>
+            )}
           </div>
           <p className="text-[11px] text-slate-600 leading-normal">
-            {breakevenK > 1.0 ? (
+            {breakevenK !== null ? (
               <>
-                Net positive only when same-day replacement power costs more than{" "}
-                <strong>{breakevenK.toFixed(2)}×</strong> advance power. On this page, the plan only pays off if replacement power costs more than about {breakevenK.toFixed(2)}× advance power.
+                The plan breaks even when replacement power costs{" "}
+                <strong>{breakevenK.toFixed(2)}×</strong> advance power.
               </>
             ) : (
-              <>
-                Net positive at equal price parity (k = 1.0×) and above (break-even at {breakevenK.toFixed(2)}×).
-              </>
+              "Shortfall was not reduced in this period."
             )}
           </p>
         </div>
@@ -309,32 +342,45 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
         </div>
       </div>
 
-      {/* Payoff Matrix Table Across k = 1, 1.5, 2, 3 */}
+      {/* Explicit Parity Loss Callout */}
+      <div className="flex items-start space-x-2 p-3 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900">
+        <Info className="w-4 h-4 text-amber-700 mt-0.5 shrink-0" />
+        <div className="space-y-0.5">
+          <span className="font-bold">Loss at equal price parity (k = 1.0×):</span>
+          <p className="text-amber-800">
+            When same-day replacement power costs the same as advance power (k = 1.0×), the cautious plan incurs a net loss of{" "}
+            <strong>
+              {formatMwh(activeExtraMwh * (1.0 - surplusRecovery))} ({formatCurrency(activeExtraMwh * (1.0 - surplusRecovery) * advancePrice)})
+            </strong>
+            . The plan only pays off if replacement power carries a premium (k &gt; k*).
+          </p>
+        </div>
+      </div>
+
+      {/* Payoff Matrix Table Across k = 1.5, 2, 3 */}
       <div className="overflow-x-auto rounded-lg border border-slate-200">
         <table className="min-w-full text-xs divide-y divide-slate-200">
           <thead className="bg-slate-50 text-slate-700 font-semibold uppercase tracking-wider text-[11px]">
             <tr>
               <th className="px-4 py-3 text-left">Replacement Multiplier (k)</th>
               <th className="px-4 py-3 text-right">Same-Day Price</th>
-              <th className="px-4 py-3 text-right">Avoided Shortfall Value</th>
-              <th className="px-4 py-3 text-right">Advance Power Cost</th>
-              <th className="px-4 py-3 text-right">Net Energy Position</th>
-              <th className="px-4 py-3 text-right">Net Financial Position</th>
+              <th className="px-4 py-3 text-right">Avoided Shortfall Premium</th>
+              <th className="px-4 py-3 text-right">Unrecovered Extra Cost</th>
+              <th className="px-4 py-3 text-right">Net MWh-Equivalent</th>
+              <th className="px-4 py-3 text-right">Net Financial Saving</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white font-mono">
             {kValues.map((k) => {
               const res = calculateScenario(k);
-              const isBreakevenRow = k >= breakevenK;
+              const isBreakevenRow = breakevenK !== null && k >= breakevenK;
               return (
                 <tr key={k} className={isBreakevenRow ? "hover:bg-emerald-50/40" : "hover:bg-amber-50/40"}>
                   <td className="px-4 py-3 text-left font-sans">
                     <div className="flex items-center space-x-2">
                       <span className="font-bold text-slate-900 text-sm font-mono">{k.toFixed(1)}×</span>
                       <span className="text-xs text-slate-500">
-                        {k === 1.0
-                          ? "(Equal price parity)"
-                          : k === 1.5
+                        {k === 1.5
                           ? "(Moderate premium +50%)"
                           : k === 2.0
                           ? "(High peak / tight margin 2×)"
@@ -346,10 +392,10 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
                     £{res.replacementPrice.toFixed(0)}/MWh
                   </td>
                   <td className="px-4 py-3 text-right text-emerald-700 font-semibold">
-                    {formatCurrency(res.avoidedValue)}
+                    {formatCurrency(res.avoidedPremiumValue)}
                   </td>
                   <td className="px-4 py-3 text-right text-slate-600">
-                    {formatCurrency(res.extraCost)}
+                    {formatCurrency(res.extraUnrecoveredCost)}
                   </td>
                   <td className="px-4 py-3 text-right text-slate-700 font-bold">
                     {formatMwh(res.netMwh)}
@@ -375,13 +421,13 @@ export const CostRatioCalculator: React.FC<CostRatioCalculatorProps> = ({
       {/* Explanatory Footer */}
       <div className="text-[11px] text-slate-500 space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-200">
         <p>
-          <strong>How this calculation works:</strong> At decision time, planning with a cautious margin avoids <code className="bg-white px-1 py-0.5 rounded">ΔE_avoided</code> of shortfall that would otherwise be purchased same-day at price <code className="bg-white px-1 py-0.5 rounded">k × P_advance</code>, while requiring <code className="bg-white px-1 py-0.5 rounded">ΔE_advance</code> of replacement power arranged in advance at price <code className="bg-white px-1 py-0.5 rounded">P_advance</code>.
+          <strong>How this calculation works:</strong> Planning with a cautious margin avoids <code className="bg-white px-1 py-0.5 rounded">ΔE_avoided</code> of shortfall that would otherwise be purchased same-day at premium <code className="bg-white px-1 py-0.5 rounded">k × P_advance</code>, while committing <code className="bg-white px-1 py-0.5 rounded">ΔE_extra</code> of advance supply at <code className="bg-white px-1 py-0.5 rounded">P_advance</code>. With surplus recovery factor <code className="bg-white px-1 py-0.5 rounded">s</code>:
         </p>
         <p className="font-mono text-slate-600">
-          Net Payoff = [Avoided MWh × (k × P_advance)] − [Extra Advance MWh × P_advance] = P_advance × [Avoided MWh × k − Extra Advance MWh].
+          Net Saving = [ΔE_avoided × (k − 1) − ΔE_extra × (1 − s)] × P_advance
         </p>
-        <p className="text-slate-600 font-medium">
-          Note: This calculation treats extra advance power as unrecoverable, which overstates the cost when surplus can be resold.
+        <p className="font-mono text-slate-600">
+          Break-Even Multiplier: k* = 1 + (1 − s) × (ΔE_extra / ΔE_avoided)
         </p>
         <p className="text-slate-500 italic pt-0.5">
           Disclaimer: This calculator illustrates physical MWh trade-offs across historical delivery days replayed under illustrative price assumptions. Wholesale day-ahead and same-day imbalance prices vary continuously in real trading.

@@ -148,7 +148,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
     ? `1 Completed Day (${firstCompletedDay})`
     : `${completedDaysCount} Completed Days (${firstCompletedDay} to ${lastCompletedDay})`;
 
-  const breakevenDaysCount = completed_track_record?.days_breakeven_count ?? dailyRecords.filter(r => r.avoided_shortfall_mwh > r.extra_supply_mwh).length;
+  const breakevenDaysCount = completed_track_record?.days_break_even_under_2x ?? dailyRecords.filter(r => r.avoided_shortfall_mwh > r.extra_supply_mwh).length;
 
   // Prepare 48h chart data
   const historyChartData = (history_48h || []).map((obs) => ({
@@ -177,7 +177,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
     elexon_sf: r.elexon_shortfall_mwh,
     safe_sf: r.safe_shortfall_mwh,
     is_reduced: r.is_shortfall_reduced,
-    is_breakeven: r.is_breakeven,
+    is_break_even_under_2x: r.is_break_even_under_2x,
   }));
 
   const p60Pt = (slider_tradeoffs || []).find((p) => Math.round(p.percentile) === 60);
@@ -795,13 +795,13 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-xs px-2.5 py-1 bg-emerald-100 text-emerald-900 font-medium rounded-full border border-emerald-200">
-                {breakevenDaysCount} of {completedDaysCount} days avoided shortfall exceeded extra supply (equal-cost break-even)
+                {breakevenDaysCount} of {completedDaysCount} days break-even &lt; 2× (avoided shortfall exceeded extra supply)
               </span>
             </div>
           </div>
 
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-3xl">
-            Bidirectional daily performance: avoided shortfall is plotted upward (+MWh, green) and extra supply arranged is plotted downward (-MWh, slate). The net marker shows the net volume (avoided minus extra) at equal cost so the cost of caution on days where Elexon was right is directly visible. All completed delivery days concluded prior to the {decisionDateFormatted} 09:00 UTC cutoff.
+            Bidirectional daily performance: avoided shortfall is plotted upward (+MWh, green) and extra supply arranged is plotted downward (-MWh, slate). The net marker shows the net volume (avoided minus extra) so the cost of caution on days where Elexon was right is directly visible. All completed delivery days concluded prior to the {decisionDateFormatted} 09:00 UTC cutoff.
           </p>
 
           {/* Running Totals Banner */}
@@ -859,7 +859,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
                         if (name === "extra_mwh_negative") return [`-${Math.abs(Number(val)).toLocaleString()} MWh`, "Extra Supply Arranged (Downward)"];
                         if (name === "net_mwh") {
                           const num = Number(val);
-                          return [`${num >= 0 ? '+' : ''}${num.toLocaleString()} MWh`, "Net at equal cost (Avoided − Extra)"];
+                          return [`${num >= 0 ? '+' : ''}${num.toLocaleString()} MWh`, "Net volume (Avoided − Extra)"];
                         }
                         return [val, name];
                       }}
@@ -881,7 +881,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
                     <Line
                       type="linear"
                       dataKey="net_mwh"
-                      name="Net at equal cost (Avoided − Extra)"
+                      name="Net volume (Avoided − Extra)"
                       stroke="#0284C7"
                       strokeWidth={2}
                       dot={{ r: 3, fill: "#0284C7" }}
@@ -890,7 +890,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
                 </ResponsiveContainer>
               </div>
               <div className="text-xs text-slate-500 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                <span>Honest performance check: On days where the net marker is below zero, the extra advance supply arranged exceeded the shortfall avoided (cost of caution). In {completedRangeText}, avoided shortfall exceeded extra supply on {breakevenDaysCount} of {completedDaysCount} days at equal cost.</span>
+                <span>Honest performance check: On days where the net marker is below zero, the extra advance supply arranged exceeded the shortfall avoided (cost of caution). In {completedRangeText}, avoided shortfall exceeded extra supply on {breakevenDaysCount} of {completedDaysCount} days (break-even &lt; 2×).</span>
                 <span className="font-mono text-slate-400">Evaluated at p{selected_percentile} signed-error percentile</span>
               </div>
             </div>

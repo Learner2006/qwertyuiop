@@ -28,14 +28,14 @@ export const ShortfallComparisonBars: React.FC<ShortfallComparisonBarsProps> = (
       ? checkData.flat15_safe_surplus_mwh
       : modelMode === "v2" && checkData.v2_safe_surplus_mwh !== undefined
       ? checkData.v2_safe_surplus_mwh
-      : (checkData.safe_surplus_mwh ?? checkData.extra_advance_planned_mwh);
+      : checkData.safe_surplus_mwh;
 
   const effectiveIncrementalSurplus =
     modelMode === "flat15" && checkData.flat15_incremental_surplus_mwh !== undefined
       ? checkData.flat15_incremental_surplus_mwh
       : modelMode === "v2" && checkData.v2_incremental_surplus_mwh !== undefined
       ? checkData.v2_incremental_surplus_mwh
-      : Math.max(0, (checkData.safe_surplus_mwh ?? checkData.extra_advance_planned_mwh) - (checkData.elexon_surplus_mwh ?? 0));
+      : Math.max(0, checkData.safe_surplus_mwh - (checkData.elexon_surplus_mwh ?? 0));
 
   const {
     elexon_shortfall_mwh,

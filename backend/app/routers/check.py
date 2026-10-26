@@ -106,7 +106,6 @@ def get_check(
             elexon_surplus_mwh=metrics_res["elexon_surplus_mwh"],
             safe_surplus_mwh=metrics_res["safe_surplus_mwh"],
             incremental_surplus_mwh=metrics_res["incremental_surplus_mwh"],
-            extra_advance_planned_mwh=metrics_res["extra_advance_planned_mwh"],
             v2_safe_headline_gw=v2_headline_gw,
             v2_safe_shortfall_mwh=round(v2_sf_mwh, 1),
             v2_saved_shortfall_mwh=round(v2_saved_sf_mwh, 1),

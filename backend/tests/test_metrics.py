@@ -54,7 +54,7 @@ def test_positive_saved_shortfall():
     assert res["elexon_shortfall_mwh"] == 72000.0
     assert res["safe_shortfall_mwh"] == 24000.0
     assert res["saved_shortfall_mwh"] == 48000.0
-    assert res["extra_advance_planned_mwh"] == 0.0
+    assert res["safe_surplus_mwh"] == 0.0
     assert "reduced forecast-related shortfall" in res["headline_result"]
 
 
@@ -71,7 +71,7 @@ def test_zero_shortfall_and_extra_advance_planned():
     assert res["elexon_shortfall_mwh"] == 0.0
     assert res["safe_shortfall_mwh"] == 0.0
     assert res["saved_shortfall_mwh"] == 0.0
-    assert res["extra_advance_planned_mwh"] == 96000.0
+    assert res["safe_surplus_mwh"] == 96000.0
     assert "same shortfall energy" in res["headline_result"]
 
 

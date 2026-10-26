@@ -32,6 +32,9 @@ class Settings(BaseModel):
     # Units and constants
     DT_HOURS: float = 0.5  # Half-hour interval duration
     MW_PER_GW: float = 1000.0
+    MWH_FACTOR: float = 500.0  # 1000.0 * 0.5
+    FULL_MONTH_SLOTS: int = 1440
+    SLOTS_PER_DAY: int = 48
     
     # Data path
     DATA_PATH: str = os.getenv(

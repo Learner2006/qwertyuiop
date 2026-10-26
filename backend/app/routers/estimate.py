@@ -61,7 +61,7 @@ def _compute_completed_track_record(
     tot_extra = 0.0
     reduced_count = 0
     increased_count = 0
-    breakeven_count = 0
+    days_break_even_under_2x_count = 0
 
     # Only completed target days before cutoff of dec_date:
     # On dec_date at 09:00 UTC, target day d-1 is fully delivered and actuals available.
@@ -91,7 +91,7 @@ def _compute_completed_track_record(
 
         is_be = (avoided > extra)
         if is_be:
-            breakeven_count += 1
+            days_break_even_under_2x_count += 1
 
         daily_records.append(CompletedTrackRecordDay(
             decision_date=day_inp["dec_date"].isoformat(),
@@ -102,7 +102,7 @@ def _compute_completed_track_record(
             avoided_shortfall_mwh=round(avoided, 1),
             extra_supply_mwh=round(extra, 1),
             is_shortfall_reduced=avoided > 0.01,
-            is_breakeven=is_be,
+            is_break_even_under_2x=is_be,
         ))
 
     return CompletedTrackRecord(
@@ -111,7 +111,7 @@ def _compute_completed_track_record(
         total_extra_supply_mwh=round(tot_extra, 1),
         days_reduced_count=reduced_count,
         days_increased_count=increased_count,
-        days_breakeven_count=breakeven_count,
+        days_break_even_under_2x=days_break_even_under_2x_count,
         daily_records=daily_records,
     )
 

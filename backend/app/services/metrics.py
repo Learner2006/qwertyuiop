@@ -121,7 +121,6 @@ def compute_reliability_metrics(
         "elexon_surplus_mwh": round(total_elexon_surplus, 1),
         "safe_surplus_mwh": round(total_safe_surplus, 1),
         "incremental_surplus_mwh": round(total_inc_surplus, 1),
-        "extra_advance_planned_mwh": round(total_safe_surplus, 1),  # Backwards-compatible alias
         "elexon_mae_gw": round(elex_mae, 4),
         "safe_mae_gw": round(safe_mae, 4),
         "indicative_range_coverage": round(coverage, 4),

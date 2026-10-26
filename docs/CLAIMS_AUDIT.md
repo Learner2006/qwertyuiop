@@ -40,7 +40,7 @@
 | **Sample Size** | *"Statistically proven across Great Britain"* | *"Evidence is based on a 1-month historical replay (January 2026, 30 decision days, 1,440 settlement intervals). A single month is a limited sample and performance under other weather regimes may differ."* |
 | **Certainty & Proof** | *"Guarantees persistent shortfall reduction"* / *"Verified Parquet replay cache"* | *"Can systematically reduce shortfall frequency"* / *"Replay cache (SHA-256: d997afe4...)"* |
 | **Audit Language** | *"Official National Grid audit trail"* | *"Reproducible historical replay log from Elexon BMRS public settlement data"* |
-| **Metric Clarity** | *"30 of 30 days reduced shortfall"* | *"Days where avoided shortfall exceeded extra supply at equal cost (22 of 30 days for flat 15%, 17 of 30 days for v1)"* |
+| **Metric Clarity** | *"30 of 30 days reduced shortfall"* | *"Days where break-even < 2x (avoided shortfall exceeded extra supply: 22 of 30 days for flat 15%, 17 of 30 days for v1)"* |
 | **Publication Lag** | Stated as factual publication timing | Explicitly marked: *"1-hour publication lag is an operational assumption"* |
 | **Bias Denominator** | Inconsistently stated as "+15.5%" or "+13.2 GW%" | Standardized and explicitly labelled: *"+15.5% of outturn (+13.4% of forecast)"* |
 

@@ -18,6 +18,7 @@ from app.schemas import (
     PercentileSweepPoint,
 )
 from app.services.calibrate import calibrate_daily_forecast
+from app.services.economics import break_even_price_ratio
 from app.services.metrics import compute_reliability_metrics
 from app.services.models import v2_proportional, flat_15, v1_additive
 from app.services.prepare import DataManager
@@ -58,7 +59,7 @@ def get_month_summary(
     
     days_reduced = 0
     days_increased = 0
-    days_breakeven_count = 0
+    days_break_even_under_2x = 0
 
     # Early cold-start (Jan 1-3) vs mature (Jan 4-30) accumulators
     cs_avoided_sf = 0.0
@@ -135,7 +136,7 @@ def get_month_summary(
             days_increased += 1
 
         if day_avoided > day_inc_surplus:
-            days_breakeven_count += 1
+            days_break_even_under_2x += 1
 
     total_avoided_sf = total_elexon_sf - total_safe_sf
     total_incremental_surplus = total_safe_surplus - total_elexon_surplus
@@ -200,7 +201,7 @@ def get_month_summary(
     total_volume_cut = total_safe_margin_mwh
     safe_efficiency = (total_avoided_sf / total_volume_cut) * 100.0 if total_volume_cut > 0 else 0.0
     matched_flat_efficiency = (matched_avoided_sf / total_volume_cut) * 100.0 if total_volume_cut > 0 else 0.0
-    breakeven_ratio = (total_incremental_surplus / total_avoided_sf) if total_avoided_sf > 0 else 1.0
+    breakeven_ratio = break_even_price_ratio(total_avoided_sf, total_incremental_surplus, s=0.0) or 1.0
 
     # 1. Flat 15% Benchmark (Fair pre-set rule)
     flat15_sf = 0.0
@@ -225,7 +226,7 @@ def get_month_summary(
         avoided_shortfall_mwh=round(flat15_avoided, 1),
         extra_supply_mwh=round(flat15_extra, 1),
         efficiency_pct=round((flat15_avoided / flat15_cut) * 100.0, 1),
-        breakeven_ratio=round(flat15_extra / flat15_avoided, 3),
+        breakeven_ratio=round(break_even_price_ratio(flat15_avoided, flat15_extra, s=0.0) or 1.0, 3),
         mae_gw=round(flat15_mae / 1440.0, 3),
     )
 
@@ -255,7 +256,7 @@ def get_month_summary(
         avoided_shortfall_mwh=round(mean_avoided, 1),
         extra_supply_mwh=round(mean_extra, 1),
         efficiency_pct=round((mean_avoided / mean_cut) * 100.0, 1),
-        breakeven_ratio=round(mean_extra / mean_avoided, 3),
+        breakeven_ratio=round(break_even_price_ratio(mean_avoided, mean_extra, s=0.0) or 1.0, 3),
         mae_gw=round(mean_mae / 1440.0, 3),
     )
 
@@ -288,7 +289,7 @@ def get_month_summary(
         avoided_shortfall_mwh=round(mr_avoided, 1),
         extra_supply_mwh=round(mr_extra, 1),
         efficiency_pct=round((mr_avoided / mr_cut) * 100.0, 1) if mr_cut > 0 else 0.0,
-        breakeven_ratio=round(mr_extra / mr_avoided, 3) if mr_avoided > 0 else 1.0,
+        breakeven_ratio=round(break_even_price_ratio(mr_avoided, mr_extra, s=0.0) or 1.0, 3) if mr_avoided > 0 else 1.0,
         mae_gw=round(mean_ratio_mae / 1440.0, 3),
     )
 
@@ -347,7 +348,7 @@ def get_month_summary(
         extra = tot_sur - tot_elex_sur_p
         cut = avoided + extra
         eff = (avoided / cut) * 100.0 if cut > 0 else 0.0
-        be = (extra / avoided) if avoided > 0 else 999.0
+        be = break_even_price_ratio(avoided, extra, s=0.0) or 999.0
         n_slots = len(days_range) * 48
         return ModelBenchmark(
             name=name,
@@ -400,7 +401,7 @@ def get_month_summary(
             avoided_shortfall_mwh=round(p_avoided, 1),
             extra_supply_mwh=round(p_extra, 1),
             efficiency_pct=round((p_avoided / p_cut) * 100.0, 1) if p_cut > 0 else 0.0,
-            breakeven_ratio=round(p_extra / p_avoided, 3) if p_avoided > 0 else 1.0,
+            breakeven_ratio=round(break_even_price_ratio(p_avoided, p_extra, s=0.0) or 1.0, 3),
             mae_gw=round(p_mae / 1440.0, 3),
         ))
 
@@ -408,11 +409,11 @@ def get_month_summary(
         f"Across Jan 2026, planning with our estimate would have avoided "
         f"{round(total_avoided_sf):,} MWh of shortfall ({avoided_sf_pct:.1f}% of total wind) "
         f"while arranging {round(total_incremental_surplus):,} MWh extra in advance ({inc_surplus_pct:.1f}% of total wind). "
-        f"Break-even: the cautious plan pays off if replacement power costs at least {breakeven_ratio:.2f}x the cost of excess advance supply."
+        f"Break-even: the cautious plan pays off if replacement power costs at least {breakeven_ratio:.2f}x advance power (at s=0 surplus recovery)."
     )
 
     cold_start_ratio = (cs_avoided_sf / cs_inc_surplus) if cs_inc_surplus > 0 else 1.0
-    mature_be_ratio = (mature_inc_surplus / mature_avoided_sf) if mature_avoided_sf > 0 else 1.0
+    mature_be_ratio = break_even_price_ratio(mature_avoided_sf, mature_inc_surplus, s=0.0) or 1.0
 
     res = MonthSummaryResponse(
         decision_dates_count=30,
@@ -437,7 +438,6 @@ def get_month_summary(
         total_elexon_surplus_mwh=round(total_elexon_surplus, 1),
         total_safe_surplus_mwh=round(total_safe_surplus, 1),
         total_incremental_surplus_mwh=round(total_incremental_surplus, 1),
-        total_extra_advance_planned_mwh=round(total_incremental_surplus, 1),
         elexon_surplus_pct_of_wind=round(elex_surplus_pct, 1),
         safe_surplus_pct_of_wind=round(safe_surplus_pct, 1),
         incremental_surplus_pct_of_wind=round(inc_surplus_pct, 1),
@@ -483,7 +483,7 @@ def get_month_summary(
         flat_benchmarks=flat_benchmarks,
         days_shortfall_reduced=days_reduced,
         days_shortfall_increased=days_increased,
-        days_breakeven_count=days_breakeven_count,
+        days_break_even_under_2x=days_break_even_under_2x,
         summary_sentence=sentence,
     )
     _summary_cache[percentile] = res

@@ -73,7 +73,6 @@ class MonthSummaryResponse(BaseModel):
     total_elexon_surplus_mwh: float
     total_safe_surplus_mwh: float
     total_incremental_surplus_mwh: float
-    total_extra_advance_planned_mwh: float  # Alias for incremental surplus
     elexon_surplus_pct_of_wind: float
     safe_surplus_pct_of_wind: float
     incremental_surplus_pct_of_wind: float
@@ -82,7 +81,7 @@ class MonthSummaryResponse(BaseModel):
     total_volume_cut_mwh: float  # 1,959,295.7 MWh (20.57%)
     safe_efficiency_pct: float  # 49.82% (avoided_sf / cut_volume)
     matched_flat_efficiency_pct: float  # 60.47% (matched_avoided / cut_volume)
-    breakeven_ratio: float  # 1.007
+    breakeven_ratio: float  # k* = 1 + extra / avoided (at s=0)
 
     # Phase 1 (Jan 1-3) vs Phase 2 (Jan 4-30) comparison
     cold_start_days: int = 3
@@ -95,7 +94,7 @@ class MonthSummaryResponse(BaseModel):
     mature_intervals: int = 1296
     mature_avoided_shortfall_mwh: float = 841384.1
     mature_incremental_surplus_mwh: float = 906187.3
-    mature_breakeven_ratio: float = 1.077  # extra / avoided
+    mature_breakeven_ratio: float = 2.077  # 1 + extra / avoided
 
     # Baseline models for comparative analysis
     flat_15_benchmark: ModelBenchmark
@@ -129,7 +128,7 @@ class MonthSummaryResponse(BaseModel):
     
     days_shortfall_reduced: int
     days_shortfall_increased: int
-    days_breakeven_count: int = 0
+    days_break_even_under_2x: int = 0
     summary_sentence: str
 
 
@@ -197,7 +196,7 @@ class CompletedTrackRecordDay(BaseModel):
     avoided_shortfall_mwh: float
     extra_supply_mwh: float
     is_shortfall_reduced: bool
-    is_breakeven: bool = False
+    is_break_even_under_2x: bool = False
 
 
 class CompletedTrackRecord(BaseModel):
@@ -206,7 +205,7 @@ class CompletedTrackRecord(BaseModel):
     total_extra_supply_mwh: float
     days_reduced_count: int
     days_increased_count: int
-    days_breakeven_count: int = 0
+    days_break_even_under_2x: int = 0
     daily_records: List[CompletedTrackRecordDay]
 
 
@@ -309,7 +308,6 @@ class CheckResponse(BaseModel):
     elexon_surplus_mwh: float
     safe_surplus_mwh: float
     incremental_surplus_mwh: float
-    extra_advance_planned_mwh: float  # Alias for safe_surplus_mwh for backwards compatibility
     
     # v2 proportional metrics
     v2_safe_headline_gw: Optional[float] = None

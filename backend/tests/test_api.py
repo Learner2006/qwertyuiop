@@ -28,12 +28,11 @@ def test_summary_endpoint():
     assert data["total_elexon_shortfall_mwh"] > 1000000
     assert data["total_avoided_shortfall_mwh"] > 0
     assert data["total_incremental_surplus_mwh"] > 0
-    assert data["total_extra_advance_planned_mwh"] > 0
     assert data["total_actual_wind_mwh"] > 8000000
     assert data["elexon_overforecast_pct"] == pytest.approx(15.48, abs=0.1)
     assert data["safe_efficiency_pct"] == pytest.approx(49.57, abs=0.2)
     assert data["matched_flat_efficiency_pct"] == pytest.approx(60.56, abs=0.2)
-    assert data["breakeven_ratio"] == pytest.approx(1.02, abs=0.02)
+    assert data["breakeven_ratio"] == pytest.approx(2.02, abs=0.02)
     assert data["cold_start_intervals"] == 144
     assert data["mature_intervals"] == 1296
     assert data["cold_start_avoided_shortfall_mwh"] > 100000
@@ -90,7 +89,7 @@ def test_check_endpoint_valid():
     assert "elexon_shortfall_mwh" in data
     assert "safe_shortfall_mwh" in data
     assert "saved_shortfall_mwh" in data
-    assert "extra_advance_planned_mwh" in data
+    assert "safe_surplus_mwh" in data
     assert "headline_result" in data
 
 
