@@ -28,14 +28,7 @@ from app.schemas import (
 from app.services.calibrate import calibrate_daily_forecast
 from app.services.models import v2_proportional
 from app.services.prepare import DataManager
-from app.services.replay import replay, clear_replay_cache
-
-class _DailyInputsCacheWrapper(dict):
-    def clear(self):
-        super().clear()
-        clear_replay_cache()
-
-_daily_inputs_cache = _DailyInputsCacheWrapper()
+from app.services.replay import replay
 
 router = APIRouter(tags=["Estimate"])
 

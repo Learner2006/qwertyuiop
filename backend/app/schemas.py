@@ -84,17 +84,17 @@ class MonthSummaryResponse(BaseModel):
     breakeven_ratio: float  # k* = 1 + extra / avoided (at s=0)
 
     # Phase 1 (Jan 1-3) vs Phase 2 (Jan 4-30) comparison
-    cold_start_days: int = 3
-    cold_start_intervals: int = 144
-    cold_start_avoided_shortfall_mwh: float = 134810.1
-    cold_start_incremental_surplus_mwh: float = 76914.2
-    cold_start_ratio: float = 1.753  # avoided / extra
+    cold_start_days: int
+    cold_start_intervals: int
+    cold_start_avoided_shortfall_mwh: float
+    cold_start_incremental_surplus_mwh: float
+    cold_start_ratio: float  # avoided / extra
 
-    mature_days: int = 27
-    mature_intervals: int = 1296
-    mature_avoided_shortfall_mwh: float = 841384.1
-    mature_incremental_surplus_mwh: float = 906187.3
-    mature_breakeven_ratio: float = 2.077  # 1 + extra / avoided
+    mature_days: int
+    mature_intervals: int
+    mature_avoided_shortfall_mwh: float
+    mature_incremental_surplus_mwh: float
+    mature_breakeven_ratio: float  # 1 + extra / avoided
 
     # Baseline models for comparative analysis
     flat_15_benchmark: ModelBenchmark

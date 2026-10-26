@@ -14,8 +14,8 @@ from app.config import settings
 from app.main import app
 from app.services.calibrate import calibrate_daily_forecast
 from app.services.prepare import DataManager
+from app.services.replay import clear_replay_cache
 from fastapi.testclient import TestClient
-import app.routers.estimate as estimate_router
 
 client = TestClient(app)
 
@@ -192,7 +192,7 @@ def test_leakage_6_all_30_dates_invariant_to_post_cutoff_truncation(real_data_ma
             real_data_manager._forecasts_df = orig_fcs.copy()
             real_data_manager._actuals_df = orig_acts.copy()
             real_data_manager._precompute_day_ahead_forecasts()
-            estimate_router._daily_inputs_cache.clear()
+            clear_replay_cache()
 
             # Baseline response on full month data
             resp_full = client.get(f"/api/estimate?date={date_str}&percentile=75.0")
@@ -204,7 +204,7 @@ def test_leakage_6_all_30_dates_invariant_to_post_cutoff_truncation(real_data_ma
             real_data_manager._forecasts_df = orig_fcs[orig_fcs["publish_time"] <= cutoff_str].copy()
             real_data_manager._actuals_df = orig_acts[orig_acts["publish_time"] <= cutoff_str].copy()
             real_data_manager._precompute_day_ahead_forecasts()
-            estimate_router._daily_inputs_cache.clear()
+            clear_replay_cache()
 
             resp_trunc = client.get(f"/api/estimate?date={date_str}&percentile=75.0")
             assert resp_trunc.status_code == 200
@@ -222,7 +222,7 @@ def test_leakage_6_all_30_dates_invariant_to_post_cutoff_truncation(real_data_ma
         real_data_manager._forecasts_df = orig_fcs
         real_data_manager._actuals_df = orig_acts
         real_data_manager._precompute_day_ahead_forecasts()
-        estimate_router._daily_inputs_cache.clear()
+        clear_replay_cache()
 
 
 def test_leakage_7_maximum_completed_delivery_day_is_d_minus_1():

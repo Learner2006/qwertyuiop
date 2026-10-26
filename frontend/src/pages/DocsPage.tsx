@@ -52,14 +52,14 @@ export const DocsPage: React.FC = () => {
             <span>Economic Break-Even Formula</span>
           </div>
           <p className="leading-relaxed">
-            <strong>Break-even: The cautious plan pays off if replacement power costs at least {summaryData ? `${summaryData.breakeven_ratio.toFixed(2)}×` : "1.02×"} the cost of excess advance supply.</strong><br />
+            <strong>Break-even: The cautious plan pays off if replacement power costs at least {summaryData ? `${summaryData.breakeven_ratio.toFixed(2)}×` : "..."} the advance purchase price (at zero salvage).</strong><br />
             Formula: <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-200">
-              Incremental Advance Power ({summaryData ? `${Math.round(summaryData.total_incremental_surplus_mwh).toLocaleString()} MWh` : "ΔExtra MWh"}) / Avoided Shortfall ({summaryData ? `${Math.round(summaryData.total_avoided_shortfall_mwh).toLocaleString()} MWh` : "ΔAvoided MWh"}) = {summaryData ? `${summaryData.breakeven_ratio.toFixed(3)}×` : "k*"}
+              k* = 1 + (1 - s) × [Incremental Advance Power ({summaryData ? `${Math.round(summaryData.total_incremental_surplus_mwh).toLocaleString()} MWh` : "ΔExtra"}) / Avoided Shortfall ({summaryData ? `${Math.round(summaryData.total_avoided_shortfall_mwh).toLocaleString()} MWh` : "ΔAvoided"})] = {summaryData ? `${summaryData.breakeven_ratio.toFixed(3)}×` : "k*"}
             </code>.
-            In wholesale electricity markets, prompt replacement electricity during shortfalls often costs more than {summaryData ? `${summaryData.breakeven_ratio.toFixed(2)}×` : "1.02×"} day-ahead forward power.
+            In wholesale electricity markets, prompt replacement electricity during shortfalls frequently exceeds {summaryData ? `${summaryData.breakeven_ratio.toFixed(2)}×` : "..."} day-ahead forward power.
           </p>
           <p className="text-[11px] text-amber-800/80 italic pt-1 border-t border-amber-200/60">
-            * Note: The break-even ratio is a simplified physical energy metric (extra supply / avoided shortfall) assuming unneeded advance power is not resold. Real market settlement involves dual imbalance pricing, cashout spreads, and within-day trading.
+            * Note: The break-even ratio is computed from the invariant physical ledger k* = 1 + (1 - s) × (Extra / Avoided), where s is the salvage recovery factor on surplus power (default s = 0.0). Real market settlement also involves cashout spreads and dual imbalance pricing.
           </p>
         </div>
       </section>
