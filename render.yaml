@@ -1,0 +1,27 @@
+services:
+  # Backend API Container Service
+  - type: web
+    name: wind-day-ahead-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /api/health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: PORT
+        value: 8000
+      - key: CORS_ORIGINS
+        sync: false
+
+  # Frontend Reverse Proxy Container Service
+  - type: web
+    name: wind-day-ahead-frontend
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: starter
+    region: frankfurt
+    healthCheckPath: /health

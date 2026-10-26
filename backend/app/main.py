@@ -40,4 +40,11 @@ def root():
         "pitch": settings.ONE_LINE_PITCH,
         "docs": "/docs",
         "health": "/api/health",
+        "healthz": "/healthz",
     }
+
+
+@app.get("/healthz", tags=["Health"])
+def healthz():
+    """Standard Kubernetes / cloud orchestrator liveness and readiness probe."""
+    return health.get_health()
