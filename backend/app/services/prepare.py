@@ -21,7 +21,31 @@ class DataManager:
     def __init__(self, data_path: Optional[str] = None):
         self.data_path = data_path or settings.DATA_PATH
         self._day_ahead_cache = {}
+        self._file_meta = None
         self.load_data()
+
+    @property
+    def file_metadata(self) -> dict:
+        if self._file_meta is None:
+            if os.path.exists(self.data_path):
+                import hashlib
+                h = hashlib.sha256()
+                with open(self.data_path, "rb") as f:
+                    for chunk in iter(lambda: f.read(65536), b""):
+                        h.update(chunk)
+                sz = os.path.getsize(self.data_path)
+                mt = os.path.getmtime(self.data_path)
+                mtime_utc = datetime.datetime.fromtimestamp(mt, tz=datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                self._file_meta = {
+                    "filename": os.path.basename(self.data_path),
+                    "size_kb": int(round(sz / 1024.0)),
+                    "build_date_utc": mtime_utc,
+                    "sha256": h.hexdigest(),
+                    "record_count": len(self._df) if self._df is not None else 0,
+                }
+            else:
+                self._file_meta = {}
+        return self._file_meta
 
     @classmethod
     def get_instance(cls, data_path: Optional[str] = None) -> "DataManager":

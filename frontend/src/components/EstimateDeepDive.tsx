@@ -570,7 +570,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
                   />
                   <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                     {histogramData.map((entry, index) => {
-                      const isHighError = entry.bin_end >= (error_distribution?.p75_error_gw ?? 2.5);
+                      const isHighError = error_distribution ? entry.bin_end >= error_distribution.p75_error_gw : false;
                       return (
                         <Cell
                           key={`cell-${index}`}
@@ -938,7 +938,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
               <div className="p-3.5 bg-white rounded-lg border border-slate-200 space-y-1">
                 <span className="text-slate-500 font-sans block text-[11px]">Revisions Available at Cutoff</span>
                 <span className="font-bold text-slate-900 text-sm">
-                  {provenance?.forecast_revisions_count ?? 1} Vintages ({provenance?.target_forecast_rows_count ?? 48} Records)
+                  {provenance ? `${provenance.forecast_revisions_count} Vintages (${provenance.target_forecast_rows_count} Records)` : "—"}
                 </span>
                 <span className="text-slate-400 text-[10px] block">
                   Target day has 48 settlement periods. Rolling forecast vintages published prior to 09:00 UTC are evaluated, and the latest published forecast per settlement period is selected.
@@ -958,7 +958,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
               <div className="p-3.5 bg-white rounded-lg border border-slate-200 space-y-1">
                 <span className="text-slate-500 font-sans block text-[11px]">Decision Freeze Cutoff</span>
                 <span className="font-bold text-sky-800 text-sm">
-                  {provenance?.freeze_cutoff_utc || "2026-01-25T09:00:00Z"}
+                  {provenance?.freeze_cutoff_utc ?? (estimateData.decision_date ? `${estimateData.decision_date}T09:00:00Z` : "—")}
                 </span>
                 <span className="text-slate-400 text-[10px] block">
                   Cutoff boundary: strictly no forecasts published or actuals recorded after 09:00 UTC on {decisionDateFormatted} are used.
@@ -969,17 +969,17 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
             <div className="p-3.5 bg-slate-900 text-slate-300 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px]">
               <div className="flex items-center space-x-2">
                 <FileCode className="w-4 h-4 text-sky-400 shrink-0" />
-                <span>Local Snapshot: {provenance?.snapshot_filename} ({provenance?.snapshot_size_kb} KB, 37,696 records)</span>
+                <span>Local Snapshot: {provenance?.snapshot_filename} ({provenance?.snapshot_size_kb} KB, {provenance?.snapshot_record_count?.toLocaleString()} records)</span>
               </div>
               <div className="flex items-center space-x-3">
-                <span>Built: {formatDateHour(provenance?.snapshot_build_date_utc || "2026-10-24T16:49:00Z")}</span>
-                <span className="text-sky-300 font-semibold">{provenance?.snapshot_status || "Replay cache"}</span>
+                <span>Built: {provenance?.snapshot_build_date_utc ? formatDateHour(provenance.snapshot_build_date_utc) : "—"}</span>
+                <span className="text-sky-300 font-semibold">{provenance?.snapshot_status}</span>
               </div>
             </div>
 
             <div className="p-2.5 bg-slate-800/60 rounded border border-slate-700 text-[10px] text-slate-400 font-mono break-all">
               <span className="text-slate-500 mr-2">SHA-256:</span>
-              <span className="text-slate-300">{provenance?.snapshot_sha256 || "d997afe42e53663a4dbef2c597da8f515d5490d7fbb159370b28fbb5c9a95f98"}</span>
+              <span className="text-slate-300">{provenance?.snapshot_sha256}</span>
             </div>
           </div>
         </section>
@@ -1095,7 +1095,7 @@ export const EstimateDeepDive: React.FC<EstimateDeepDiveProps> = ({
               {faqOpen.faq1 && (
                 <div className="p-4 bg-white text-xs sm:text-sm text-slate-700 leading-relaxed border-t border-slate-200 space-y-2">
                   <p>
-                    Because Elexon's forecast ran above FUELHH outturn in <strong>{error_distribution?.overforecast_pct ?? 100}%</strong> of the last {historyHours} hours
+                    Because Elexon's forecast ran above FUELHH outturn in <strong>{error_distribution ? `${error_distribution.overforecast_pct}%` : "100%"}</strong> of the last {historyHours} hours
                     ({error_distribution?.overforecast_count ?? historical_observations_count} of the last {historical_observations_count} half-hours), and this setting protects against the {selected_percentile}th signed-error percentile ({appliedMargin.toFixed(1)} GW). Part of this gap reflects definitional differences between WINDFOR (visible wind) and FUELHH (transmission-metered BMUs).
                   </p>
                   <p className="text-slate-500 text-xs">

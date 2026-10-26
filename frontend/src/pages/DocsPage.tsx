@@ -238,15 +238,15 @@ export const DocsPage: React.FC = () => {
             <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1">
               <span className="font-bold text-slate-900 block">Phase 1: Cold Start (Jan 1–3 Decisions targeting Jan 2–4)</span>
               <p className="text-slate-600 text-xs font-normal">
-                {summaryData?.cold_start_intervals ?? 144} slots. Uses linear blend weight formula <code className="bg-slate-100 px-1 py-0.5 rounded">w = min(1.0, n/96)</code> where n is count of prior observations.<br />
-                Avoided Shortfall: <strong>+{summaryData ? Math.round(summaryData.cold_start_avoided_shortfall_mwh).toLocaleString() : "..."} MWh</strong> | Extra advance power: <strong>+{summaryData ? Math.round(summaryData.cold_start_incremental_surplus_mwh).toLocaleString() : "..."} MWh</strong> | Ratio (Avoided / Extra): <strong>{summaryData?.cold_start_ratio.toFixed(2) ?? "1.75"}×</strong>.
+                {summaryData ? summaryData.cold_start_intervals : "..."} slots. Uses linear blend weight formula <code className="bg-slate-100 px-1 py-0.5 rounded">w = min(1.0, n/96)</code> where n is count of prior observations.<br />
+                Avoided Shortfall: <strong>+{summaryData ? Math.round(summaryData.cold_start_avoided_shortfall_mwh).toLocaleString() : "..."} MWh</strong> | Extra advance power: <strong>+{summaryData ? Math.round(summaryData.cold_start_incremental_surplus_mwh).toLocaleString() : "..."} MWh</strong> | Ratio (Avoided / Extra): <strong>{summaryData ? `${summaryData.cold_start_ratio.toFixed(2)}×` : "..."}</strong>.
               </p>
             </div>
             <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1">
               <span className="font-bold text-slate-900 block">Phase 2: Mature Data-Driven (Jan 4–30 Decisions targeting Jan 5–31)</span>
               <p className="text-slate-600 text-xs font-normal">
-                {summaryData?.mature_intervals ?? 1296} slots. Full 48h calibration lookback (96 observations, w = 1.0), 100% data-driven.<br />
-                Avoided Shortfall: <strong>+{summaryData ? Math.round(summaryData.mature_avoided_shortfall_mwh).toLocaleString() : "..."} MWh</strong> | Extra advance power: <strong>+{summaryData ? Math.round(summaryData.mature_incremental_surplus_mwh).toLocaleString() : "..."} MWh</strong> | Break-Even Ratio: <strong>{summaryData?.mature_breakeven_ratio.toFixed(2) ?? "1.08"}×</strong>.
+                {summaryData ? summaryData.mature_intervals : "..."} slots. Full 48h calibration lookback (96 observations, w = 1.0), 100% data-driven.<br />
+                Avoided Shortfall: <strong>+{summaryData ? Math.round(summaryData.mature_avoided_shortfall_mwh).toLocaleString() : "..."} MWh</strong> | Extra advance power: <strong>+{summaryData ? Math.round(summaryData.mature_incremental_surplus_mwh).toLocaleString() : "..."} MWh</strong> | Break-Even Ratio: <strong>{summaryData ? `${summaryData.mature_breakeven_ratio.toFixed(2)}×` : "..."}</strong>.
               </p>
             </div>
           </div>
@@ -285,12 +285,12 @@ export const DocsPage: React.FC = () => {
           </h2>
           <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
             <Award className="w-3.5 h-3.5 mr-1" />
-            Decision: {validationData?.winner?.model?.toUpperCase() || "FLAT_15"} Confirmed
+            Decision: {validationData ? validationData.winner.model.toUpperCase() : "..."} Confirmed
           </span>
         </div>
 
         <p className="text-sm text-slate-600 leading-relaxed">
-          To verify model durability beyond January 2026 without data leakage or post-hoc tuning, candidate models were evaluated under frozen protocol (<code className="bg-slate-100 px-1 py-0.5 rounded text-xs font-mono">PROTOCOL_v2.md</code>) across 8 out-of-time months ({validationData?.metadata?.total_delivery_days || 241} delivery days, {validationData?.metadata?.total_settlement_intervals?.toLocaleString() || "11,568"} half-hour intervals).
+          To verify model durability beyond January 2026 without data leakage or post-hoc tuning, candidate models were evaluated under frozen protocol (<code className="bg-slate-100 px-1 py-0.5 rounded text-xs font-mono">PROTOCOL_v2.md</code>) across 8 out-of-time months ({validationData ? validationData.metadata.total_delivery_days : "..."} delivery days, {validationData ? validationData.metadata.total_settlement_intervals.toLocaleString() : "..."} half-hour intervals).
         </p>
 
         {validationData ? (

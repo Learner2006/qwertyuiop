@@ -223,6 +223,7 @@ export interface ProvenanceMetadata {
   snapshot_build_date_utc: string;
   snapshot_status: string;
   snapshot_sha256?: string;
+  snapshot_record_count: number;
 }
 
 export interface EstimateResponse {

@@ -6,6 +6,7 @@ slider trade-offs across completed days, completed track record, and provenance.
 """
 
 import datetime
+import os
 from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
@@ -317,11 +318,18 @@ def get_estimate(
         v2_safe_headline = v2_res["headline_gw"]
         v2_ratio = v2_res["applied_ratio"]
 
+        fmeta = dm.file_metadata
         provenance = ProvenanceMetadata(
             forecast_latest_publish_utc=latest_pub_str,
             forecast_revisions_count=revisions_count,
             target_forecast_rows_count=rows_count,
             freeze_cutoff_utc=cutoff_utc_str,
+            snapshot_filename=fmeta.get("filename", os.path.basename(dm.data_path)),
+            snapshot_size_kb=fmeta.get("size_kb", 0),
+            snapshot_build_date_utc=fmeta.get("build_date_utc", ""),
+            snapshot_status="Replay cache",
+            snapshot_sha256=fmeta.get("sha256", ""),
+            snapshot_record_count=fmeta.get("record_count", len(dm._df) if dm._df is not None else 0),
         )
 
         # 11. Empirical Band Realised Coverage (Milestone R5 / Findings F5, F6)

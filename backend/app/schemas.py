@@ -222,11 +222,12 @@ class ProvenanceMetadata(BaseModel):
     source_forecast_dataset: str = "Elexon BMRS WINDFOR (Day-Ahead Wind Forecast)"
     source_actuals_dataset: str = "Elexon BMRS FUELHH (Outturn Wind Generation)"
     freeze_cutoff_utc: str
-    snapshot_filename: str = "jan2026.parquet"
-    snapshot_size_kb: int = 253
-    snapshot_build_date_utc: str = "2026-10-24T16:49:00Z"
+    snapshot_filename: str
+    snapshot_size_kb: int
+    snapshot_build_date_utc: str
     snapshot_status: str = "Replay cache"
-    snapshot_sha256: str = "d997afe42e53663a4dbef2c597da8f515d5490d7fbb159370b28fbb5c9a95f98"
+    snapshot_sha256: str
+    snapshot_record_count: int
 
 
 class EstimateInterval(BaseModel):

@@ -79,7 +79,9 @@ export const ShortfallComparisonBars: React.FC<ShortfallComparisonBarsProps> = (
               ? "Flat 15% Baseline: Selected headline model (15% uniform haircut)."
               : modelMode === "v1"
               ? "v1: Original declared model (48h signed-error quantile floored at 0)."
-              : `v2: Proportional margin model (${(((checkData.v2_ratio ?? 0.15)) * 100).toFixed(1)}% cut).`}
+              : checkData.v2_ratio !== undefined
+              ? `v2: Proportional margin model (${(checkData.v2_ratio * 100).toFixed(1)}% cut).`
+              : "v2: Proportional margin model."}
           </span>
         </div>
         <div className="inline-flex rounded-lg bg-white p-0.5 border border-slate-200 text-xs font-semibold shrink-0">

@@ -218,10 +218,13 @@ export const EstimatePage: React.FC<EstimatePageProps> = ({
                 <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-medium">Post-v1 Variant</span>
               </div>
               <div className="text-xl font-bold font-mono text-slate-900">
-                {(estimateData.v2_safe_headline_gw ?? (estimateData.elexon_headline_gw * (1 - (estimateData.v2_ratio ?? 0.15)))).toFixed(1)} GW
+                {estimateData.v2_safe_headline_gw !== undefined ? `${estimateData.v2_safe_headline_gw.toFixed(1)} GW` : "—"}
               </div>
               <p className="text-[11px] text-slate-600 leading-normal">
-                Scales margin proportionally ({(((estimateData.v2_ratio ?? 0.15)) * 100).toFixed(1)}% cut). Formulated after observing v1's high additive cuts during calm weather transitions (e.g. Jan 13–14).
+                {estimateData.v2_ratio !== undefined
+                  ? `Scales margin proportionally (${(estimateData.v2_ratio * 100).toFixed(1)}% cut).`
+                  : "Scales margin proportionally."}{" "}
+                Formulated after observing v1's high additive cuts during calm weather transitions (e.g. Jan 13–14).
               </p>
             </div>
           </div>
