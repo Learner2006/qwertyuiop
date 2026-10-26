@@ -10,6 +10,47 @@ import numpy as np
 from app.config import settings
 
 
+def calculate_shortfall_mwh(planned_gw: float, actual_gw: float) -> float:
+    """Calculates shortfall energy in MWh for a 30-min settlement interval: max(0, Planned - Actual) * 500."""
+    return max(0.0, float(planned_gw) - float(actual_gw)) * (settings.MW_PER_GW * settings.DT_HOURS)
+
+
+def calculate_surplus_mwh(planned_gw: float, actual_gw: float) -> float:
+    """Calculates surplus energy in MWh for a 30-min settlement interval: max(0, Actual - Planned) * 500."""
+    return max(0.0, float(actual_gw) - float(planned_gw)) * (settings.MW_PER_GW * settings.DT_HOURS)
+
+
+def calculate_daily_metrics(
+    plan_gw: List[float],
+    forecast_gw: List[float],
+    actual_gw: List[float],
+) -> Dict[str, float]:
+    """Calculates aggregated daily energy metrics from aligned lists of half-hourly GW values."""
+    if len(plan_gw) != len(forecast_gw) or len(forecast_gw) != len(actual_gw):
+        raise ValueError("Length mismatch between plan, forecast, and actual vectors")
+
+    tot_e_sf = sum(calculate_shortfall_mwh(f, a) for f, a in zip(forecast_gw, actual_gw))
+    tot_s_sf = sum(calculate_shortfall_mwh(p, a) for p, a in zip(plan_gw, actual_gw))
+    tot_e_sp = sum(calculate_surplus_mwh(f, a) for f, a in zip(forecast_gw, actual_gw))
+    tot_s_sp = sum(calculate_surplus_mwh(p, a) for p, a in zip(plan_gw, actual_gw))
+
+    avoided = tot_e_sf - tot_s_sf
+    incremental = tot_s_sp - tot_e_sp
+    mw_factor = settings.MW_PER_GW * settings.DT_HOURS
+    total_cut = sum(max(0.0, f - p) * mw_factor for f, p in zip(forecast_gw, plan_gw))
+
+    return {
+        "elexon_shortfall_mwh": tot_e_sf,
+        "safe_shortfall_mwh": tot_s_sf,
+        "avoided_shortfall_mwh": avoided,
+        "elexon_surplus_mwh": tot_e_sp,
+        "safe_surplus_mwh": tot_s_sp,
+        "incremental_surplus_mwh": incremental,
+        "total_cut_mwh": total_cut,
+    }
+
+
+
 def compute_reliability_metrics(
     calibration_result: dict,
     actual_records: List[dict]
