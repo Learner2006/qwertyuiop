@@ -1,0 +1,812 @@
+{
+  "metadata": {
+    "dataset_file": "validation_2026-01-29_to_2026-09-30.parquet",
+    "sha256": "d3d711a73413fd49f850bd248ab56d21714b48758c135e73f9644b6cc6853a72",
+    "size_kb": 1151.42578125,
+    "target_period_start": "2026-02-01",
+    "target_period_end": "2026-09-30",
+    "total_delivery_days": 241,
+    "total_settlement_intervals": 11568,
+    "timestamp_utc": "2026-10-26T08:31:40.737347Z"
+  },
+  "winner": {
+    "model": "flat_15",
+    "reason": "flat_15 achieved the highest cumulative Net MWh at k=2, s=0 across the validation dataset.",
+    "net_k2_s0_mwh": 3238791.7,
+    "break_even_price_ratio": 1.414
+  },
+  "overall_results": {
+    "flat_15": {
+      "avoided_shortfall_mwh": 5523600.7,
+      "extra_advance_mwh": 2284809.0,
+      "net_k2_s0_mwh": 3238791.7,
+      "break_even_price_ratio": 1.414,
+      "days_break_even_under_2x": 175,
+      "total_days": 241,
+      "total_cut_volume_mwh": 7808409.8,
+      "total_forecast_mwh": 52056065.0,
+      "cut_share_pct": 15.0,
+      "efficiency_pct": 70.74,
+      "mae_gw": 1.0143,
+      "elexon_mae_gw": 1.5743
+    },
+    "expanding_ratio": {
+      "avoided_shortfall_mwh": 4977610.7,
+      "extra_advance_mwh": 1856523.8,
+      "net_k2_s0_mwh": 3121086.9000000004,
+      "break_even_price_ratio": 1.373,
+      "days_break_even_under_2x": 179,
+      "total_days": 241,
+      "total_cut_volume_mwh": 6834134.5,
+      "total_forecast_mwh": 52056065.0,
+      "cut_share_pct": 13.13,
+      "efficiency_pct": 72.83,
+      "mae_gw": 1.0347,
+      "elexon_mae_gw": 1.5743
+    },
+    "v1_additive": {
+      "avoided_shortfall_mwh": 6109080.9,
+      "extra_advance_mwh": 5674732.6,
+      "net_k2_s0_mwh": 434348.30000000075,
+      "break_even_price_ratio": 1.929,
+      "days_break_even_under_2x": 129,
+      "total_days": 241,
+      "total_cut_volume_mwh": 11783813.5,
+      "total_forecast_mwh": 52056065.0,
+      "cut_share_pct": 22.64,
+      "efficiency_pct": 51.84,
+      "mae_gw": 1.4992,
+      "elexon_mae_gw": 1.5743
+    },
+    "v2_proportional": {
+      "avoided_shortfall_mwh": 6645287.5,
+      "extra_advance_mwh": 5151286.3,
+      "net_k2_s0_mwh": 1494001.2000000002,
+      "break_even_price_ratio": 1.775,
+      "days_break_even_under_2x": 140,
+      "total_days": 241,
+      "total_cut_volume_mwh": 11796573.8,
+      "total_forecast_mwh": 52056065.0,
+      "cut_share_pct": 22.66,
+      "efficiency_pct": 56.33,
+      "mae_gw": 1.316,
+      "elexon_mae_gw": 1.5743
+    }
+  },
+  "monthly_results": {
+    "2026-02": {
+      "flat_15": {
+        "avoided_shortfall_mwh": 834418.7,
+        "extra_advance_mwh": 443712.1,
+        "net_k2_s0_mwh": 390706.6,
+        "break_even_price_ratio": 1.532,
+        "days_break_even_under_2x": 21,
+        "total_days": 28,
+        "efficiency_pct": 65.28,
+        "cut_volume_mwh": 1278130.8
+      },
+      "expanding_ratio": {
+        "avoided_shortfall_mwh": 630283.1,
+        "extra_advance_mwh": 232824.4,
+        "net_k2_s0_mwh": 397458.69999999995,
+        "break_even_price_ratio": 1.369,
+        "days_break_even_under_2x": 21,
+        "total_days": 28,
+        "efficiency_pct": 73.02,
+        "cut_volume_mwh": 863107.5
+      },
+      "v1_additive": {
+        "avoided_shortfall_mwh": 848656.4,
+        "extra_advance_mwh": 566139.9,
+        "net_k2_s0_mwh": 282516.5,
+        "break_even_price_ratio": 1.667,
+        "days_break_even_under_2x": 19,
+        "total_days": 28,
+        "efficiency_pct": 59.98,
+        "cut_volume_mwh": 1414796.3
+      },
+      "v2_proportional": {
+        "avoided_shortfall_mwh": 865991.5,
+        "extra_advance_mwh": 568612.6,
+        "net_k2_s0_mwh": 297378.9,
+        "break_even_price_ratio": 1.657,
+        "days_break_even_under_2x": 20,
+        "total_days": 28,
+        "efficiency_pct": 60.36,
+        "cut_volume_mwh": 1434604.1
+      }
+    },
+    "2026-03": {
+      "flat_15": {
+        "avoided_shortfall_mwh": 1070403.1,
+        "extra_advance_mwh": 237036.2,
+        "net_k2_s0_mwh": 833366.9000000001,
+        "break_even_price_ratio": 1.221,
+        "days_break_even_under_2x": 26,
+        "total_days": 31,
+        "efficiency_pct": 81.87,
+        "cut_volume_mwh": 1307439.3
+      },
+      "expanding_ratio": {
+        "avoided_shortfall_mwh": 1125772.1,
+        "extra_advance_mwh": 305474.5,
+        "net_k2_s0_mwh": 820297.6000000001,
+        "break_even_price_ratio": 1.271,
+        "days_break_even_under_2x": 25,
+        "total_days": 31,
+        "efficiency_pct": 78.66,
+        "cut_volume_mwh": 1431246.6
+      },
+      "v1_additive": {
+        "avoided_shortfall_mwh": 1216228.1,
+        "extra_advance_mwh": 811206.4,
+        "net_k2_s0_mwh": 405021.70000000007,
+        "break_even_price_ratio": 1.667,
+        "days_break_even_under_2x": 20,
+        "total_days": 31,
+        "efficiency_pct": 59.99,
+        "cut_volume_mwh": 2027434.5
+      },
+      "v2_proportional": {
+        "avoided_shortfall_mwh": 1293752.1,
+        "extra_advance_mwh": 949934.6,
+        "net_k2_s0_mwh": 343817.5000000001,
+        "break_even_price_ratio": 1.734,
+        "days_break_even_under_2x": 19,
+        "total_days": 31,
+        "efficiency_pct": 57.66,
+        "cut_volume_mwh": 2243686.7
+      }
+    },
+    "2026-04": {
+      "flat_15": {
+        "avoided_shortfall_mwh": 764797.0,
+        "extra_advance_mwh": 265808.5,
+        "net_k2_s0_mwh": 498988.5,
+        "break_even_price_ratio": 1.348,
+        "days_break_even_under_2x": 21,
+        "total_days": 30,
+        "efficiency_pct": 74.21,
+        "cut_volume_mwh": 1030605.4
+      },
+      "expanding_ratio": {
+        "avoided_shortfall_mwh": 951157.6,
+        "extra_advance_mwh": 422969.2,
+        "net_k2_s0_mwh": 528188.3999999999,
+        "break_even_price_ratio": 1.445,
+        "days_break_even_under_2x": 20,
+        "total_days": 30,
+        "efficiency_pct": 69.22,
+        "cut_volume_mwh": 1374126.7
+      },
+      "v1_additive": {
+        "avoided_shortfall_mwh": 911598.3,
+        "extra_advance_mwh": 948186.6,
+        "net_k2_s0_mwh": -36588.29999999993,
+        "break_even_price_ratio": 2.04,
+        "days_break_even_under_2x": 15,
+        "total_days": 30,
+        "efficiency_pct": 49.02,
+        "cut_volume_mwh": 1859784.9
+      },
+      "v2_proportional": {
+        "avoided_shortfall_mwh": 1023257.9,
+        "extra_advance_mwh": 721496.6,
+        "net_k2_s0_mwh": 301761.30000000005,
+        "break_even_price_ratio": 1.705,
+        "days_break_even_under_2x": 19,
+        "total_days": 30,
+        "efficiency_pct": 58.65,
+        "cut_volume_mwh": 1744754.5
+      }
+    },
+    "2026-05": {
+      "flat_15": {
+        "avoided_shortfall_mwh": 512889.3,
+        "extra_advance_mwh": 278202.6,
+        "net_k2_s0_mwh": 234686.7,
+        "break_even_price_ratio": 1.542,
+        "days_break_even_under_2x": 22,
+        "total_days": 31,
+        "efficiency_pct": 64.83,
+        "cut_volume_mwh": 791091.9
+      },
+      "expanding_ratio": {
+        "avoided_shortfall_mwh": 479772.8,
+        "extra_advance_mwh": 265661.1,
+        "net_k2_s0_mwh": 214111.7,
+        "break_even_price_ratio": 1.554,
+        "days_break_even_under_2x": 22,
+        "total_days": 31,
+        "efficiency_pct": 64.36,
+        "cut_volume_mwh": 745433.9
+      },
+      "v1_additive": {
+        "avoided_shortfall_mwh": 574912.3,
+        "extra_advance_mwh": 653708.3,
+        "net_k2_s0_mwh": -78796.0,
+        "break_even_price_ratio": 2.137,
+        "days_break_even_under_2x": 17,
+        "total_days": 31,
+        "efficiency_pct": 46.79,
+        "cut_volume_mwh": 1228620.6
+      },
+      "v2_proportional": {
+        "avoided_shortfall_mwh": 567349.3,
+        "extra_advance_mwh": 567004.3,
+        "net_k2_s0_mwh": 345.0,
+        "break_even_price_ratio": 1.999,
+        "days_break_even_under_2x": 16,
+        "total_days": 31,
+        "efficiency_pct": 50.02,
+        "cut_volume_mwh": 1134353.5
+      }
+    },
+    "2026-06": {
+      "flat_15": {
+        "avoided_shortfall_mwh": 592505.7,
+        "extra_advance_mwh": 252414.4,
+        "net_k2_s0_mwh": 340091.29999999993,
+        "break_even_price_ratio": 1.426,
+        "days_break_even_under_2x": 24,
+        "total_days": 30,
+        "efficiency_pct": 70.13,
+        "cut_volume_mwh": 844920.0
+      },
+      "expanding_ratio": {
+        "avoided_shortfall_mwh": 470404.2,
+        "extra_advance_mwh": 180439.6,
+        "net_k2_s0_mwh": 289964.6,
+        "break_even_price_ratio": 1.384,
+        "days_break_even_under_2x": 24,
+        "total_days": 30,
+        "efficiency_pct": 72.28,
+        "cut_volume_mwh": 650843.8
+      },
+      "v1_additive": {
+        "avoided_shortfall_mwh": 655147.9,
+        "extra_advance_mwh": 699358.6,
+        "net_k2_s0_mwh": -44210.69999999995,
+        "break_even_price_ratio": 2.067,
+        "days_break_even_under_2x": 16,
+        "total_days": 30,
+        "efficiency_pct": 48.37,
+        "cut_volume_mwh": 1354506.6
+      },
+      "v2_proportional": {
+        "avoided_shortfall_mwh": 739176.4,
+        "extra_advance_mwh": 492244.8,
+        "net_k2_s0_mwh": 246931.60000000003,
+        "break_even_price_ratio": 1.666,
+        "days_break_even_under_2x": 19,
+        "total_days": 30,
+        "efficiency_pct": 60.03,
+        "cut_volume_mwh": 1231421.2
+      }
+    },
+    "2026-07": {
+      "flat_15": {
+        "avoided_shortfall_mwh": 463594.5,
+        "extra_advance_mwh": 250009.9,
+        "net_k2_s0_mwh": 213584.6,
+        "break_even_price_ratio": 1.539,
+        "days_break_even_under_2x": 20,
+        "total_days": 31,
+        "efficiency_pct": 64.97,
+        "cut_volume_mwh": 713604.3
+      },
+      "expanding_ratio": {
+        "avoided_shortfall_mwh": 565545.0,
+        "extra_advance_mwh": 426817.0,
+        "net_k2_s0_mwh": 138728.0,
+        "break_even_price_ratio": 1.755,
+        "days_break_even_under_2x": 16,
+        "total_days": 31,
+        "efficiency_pct": 56.99,
+        "cut_volume_mwh": 992361.9
+      },
+      "v1_additive": {
+        "avoided_shortfall_mwh": 492459.4,
+        "extra_advance_mwh": 647936.5,
+        "net_k2_s0_mwh": -155477.09999999998,
+        "break_even_price_ratio": 2.316,
+        "days_break_even_under_2x": 11,
+        "total_days": 31,
+        "efficiency_pct": 43.18,
+        "cut_volume_mwh": 1140395.9
+      },
+      "v2_proportional": {
+        "avoided_shortfall_mwh": 579582.5,
+        "extra_advance_mwh": 598481.2,
+        "net_k2_s0_mwh": -18898.699999999953,
+        "break_even_price_ratio": 2.033,
+        "days_break_even_under_2x": 14,
+        "total_days": 31,
+        "efficiency_pct": 49.2,
+        "cut_volume_mwh": 1178063.8
+      }
+    },
+    "2026-08": {
+      "flat_15": {
+        "avoided_shortfall_mwh": 395838.5,
+        "extra_advance_mwh": 296682.5,
+        "net_k2_s0_mwh": 99156.0,
+        "break_even_price_ratio": 1.75,
+        "days_break_even_under_2x": 19,
+        "total_days": 31,
+        "efficiency_pct": 57.16,
+        "cut_volume_mwh": 692521.1
+      },
+      "expanding_ratio": {
+        "avoided_shortfall_mwh": 307278.5,
+        "extra_advance_mwh": 212100.6,
+        "net_k2_s0_mwh": 95177.9,
+        "break_even_price_ratio": 1.69,
+        "days_break_even_under_2x": 21,
+        "total_days": 31,
+        "efficiency_pct": 59.16,
+        "cut_volume_mwh": 519379.0
+      },
+      "v1_additive": {
+        "avoided_shortfall_mwh": 414189.4,
+        "extra_advance_mwh": 534057.7,
+        "net_k2_s0_mwh": -119868.29999999993,
+        "break_even_price_ratio": 2.289,
+        "days_break_even_under_2x": 13,
+        "total_days": 31,
+        "efficiency_pct": 43.68,
+        "cut_volume_mwh": 948247.1
+      },
+      "v2_proportional": {
+        "avoided_shortfall_mwh": 436618.7,
+        "extra_advance_mwh": 566255.4,
+        "net_k2_s0_mwh": -129636.70000000001,
+        "break_even_price_ratio": 2.297,
+        "days_break_even_under_2x": 12,
+        "total_days": 31,
+        "efficiency_pct": 43.54,
+        "cut_volume_mwh": 1002874.1
+      }
+    },
+    "2026-09": {
+      "flat_15": {
+        "avoided_shortfall_mwh": 889154.0,
+        "extra_advance_mwh": 260942.9,
+        "net_k2_s0_mwh": 628211.1,
+        "break_even_price_ratio": 1.293,
+        "days_break_even_under_2x": 22,
+        "total_days": 29,
+        "efficiency_pct": 77.31,
+        "cut_volume_mwh": 1150096.9
+      },
+      "expanding_ratio": {
+        "avoided_shortfall_mwh": 808887.4,
+        "extra_advance_mwh": 248778.3,
+        "net_k2_s0_mwh": 560109.1000000001,
+        "break_even_price_ratio": 1.308,
+        "days_break_even_under_2x": 23,
+        "total_days": 29,
+        "efficiency_pct": 76.48,
+        "cut_volume_mwh": 1057665.6
+      },
+      "v1_additive": {
+        "avoided_shortfall_mwh": 995889.0,
+        "extra_advance_mwh": 814138.6,
+        "net_k2_s0_mwh": 181750.40000000002,
+        "break_even_price_ratio": 1.817,
+        "days_break_even_under_2x": 18,
+        "total_days": 29,
+        "efficiency_pct": 55.02,
+        "cut_volume_mwh": 1810027.6
+      },
+      "v2_proportional": {
+        "avoided_shortfall_mwh": 1139559.1,
+        "extra_advance_mwh": 687256.8,
+        "net_k2_s0_mwh": 452302.30000000005,
+        "break_even_price_ratio": 1.603,
+        "days_break_even_under_2x": 21,
+        "total_days": 29,
+        "efficiency_pct": 62.38,
+        "cut_volume_mwh": 1826815.9
+      }
+    }
+  },
+  "matched_cut_results": {
+    "flat_15": {
+      "model_avoided_mwh": 5523600.7,
+      "model_extra_mwh": 2284809.0,
+      "model_net_k2_mwh": 3238791.7,
+      "matched_haircut_pct": 15.0,
+      "matched_flat_avoided_mwh": 5523600.7,
+      "matched_flat_extra_mwh": 2284809.0,
+      "matched_flat_net_k2_mwh": 3238791.7,
+      "avoided_shortfall_advantage_mwh": 0.0,
+      "net_k2_advantage_mwh": 0.0,
+      "beats_matched_flat": false
+    },
+    "expanding_ratio": {
+      "model_avoided_mwh": 4977610.7,
+      "model_extra_mwh": 1856523.8,
+      "model_net_k2_mwh": 3121086.9000000004,
+      "matched_haircut_pct": 13.13,
+      "matched_flat_avoided_mwh": 5000451.4,
+      "matched_flat_extra_mwh": 1834510.0,
+      "matched_flat_net_k2_mwh": 3165941.4000000004,
+      "avoided_shortfall_advantage_mwh": -22840.700000000186,
+      "net_k2_advantage_mwh": -44854.5,
+      "beats_matched_flat": false
+    },
+    "v1_additive": {
+      "model_avoided_mwh": 6109080.9,
+      "model_extra_mwh": 5674732.6,
+      "model_net_k2_mwh": 434348.30000000075,
+      "matched_haircut_pct": 22.64,
+      "matched_flat_avoided_mwh": 7024715.6,
+      "matched_flat_extra_mwh": 4760777.5,
+      "matched_flat_net_k2_mwh": 2263938.0999999996,
+      "avoided_shortfall_advantage_mwh": -915634.6999999993,
+      "net_k2_advantage_mwh": -1829589.7999999989,
+      "beats_matched_flat": false
+    },
+    "v2_proportional": {
+      "model_avoided_mwh": 6645287.5,
+      "model_extra_mwh": 5151286.3,
+      "model_net_k2_mwh": 1494001.2000000002,
+      "matched_haircut_pct": 22.66,
+      "matched_flat_avoided_mwh": 7027504.6,
+      "matched_flat_extra_mwh": 4768399.7,
+      "matched_flat_net_k2_mwh": 2259104.8999999994,
+      "avoided_shortfall_advantage_mwh": -382217.0999999996,
+      "net_k2_advantage_mwh": -765103.6999999993,
+      "beats_matched_flat": false
+    }
+  },
+  "sensitivity": {
+    "cutoff_utc": {
+      "07:00 UTC": {
+        "flat_15": {
+          "avoided_mwh": 5510152.8,
+          "extra_mwh": 2306302.5,
+          "net_k2_mwh": 3203850.3,
+          "break_even": 1.419
+        },
+        "expanding_ratio": {
+          "avoided_mwh": 4936917.2,
+          "extra_mwh": 1863954.7,
+          "net_k2_mwh": 3072962.5,
+          "break_even": 1.378
+        },
+        "v1_additive": {
+          "avoided_mwh": 6146566.9,
+          "extra_mwh": 5836771.4,
+          "net_k2_mwh": 309795.5,
+          "break_even": 1.95
+        },
+        "v2_proportional": {
+          "avoided_mwh": 6631967.2,
+          "extra_mwh": 5291131.8,
+          "net_k2_mwh": 1340835.4000000004,
+          "break_even": 1.798
+        }
+      },
+      "09:00 UTC": {
+        "flat_15": {
+          "avoided_mwh": 5523600.7,
+          "extra_mwh": 2284809.0,
+          "net_k2_mwh": 3238791.7,
+          "break_even": 1.414
+        },
+        "expanding_ratio": {
+          "avoided_mwh": 4977610.7,
+          "extra_mwh": 1856523.8,
+          "net_k2_mwh": 3121086.9000000004,
+          "break_even": 1.373
+        },
+        "v1_additive": {
+          "avoided_mwh": 6109080.9,
+          "extra_mwh": 5674732.6,
+          "net_k2_mwh": 434348.30000000075,
+          "break_even": 1.929
+        },
+        "v2_proportional": {
+          "avoided_mwh": 6645287.5,
+          "extra_mwh": 5151286.3,
+          "net_k2_mwh": 1494001.2000000002,
+          "break_even": 1.775
+        }
+      },
+      "11:00 UTC": {
+        "flat_15": {
+          "avoided_mwh": 5559268.5,
+          "extra_mwh": 2258799.0,
+          "net_k2_mwh": 3300469.5,
+          "break_even": 1.406
+        },
+        "expanding_ratio": {
+          "avoided_mwh": 5007198.9,
+          "extra_mwh": 1836542.1,
+          "net_k2_mwh": 3170656.8000000003,
+          "break_even": 1.367
+        },
+        "v1_additive": {
+          "avoided_mwh": 6193011.1,
+          "extra_mwh": 5661207.4,
+          "net_k2_mwh": 531803.6999999993,
+          "break_even": 1.914
+        },
+        "v2_proportional": {
+          "avoided_mwh": 6695725.5,
+          "extra_mwh": 4984070.8,
+          "net_k2_mwh": 1711654.7000000002,
+          "break_even": 1.744
+        }
+      }
+    },
+    "actuals_lag_hours": {
+      "0h": {
+        "flat_15": {
+          "avoided_mwh": 5523600.7,
+          "extra_mwh": 2284809.0,
+          "net_k2_mwh": 3238791.7,
+          "break_even": 1.414
+        },
+        "expanding_ratio": {
+          "avoided_mwh": 4977610.7,
+          "extra_mwh": 1856523.8,
+          "net_k2_mwh": 3121086.9000000004,
+          "break_even": 1.373
+        },
+        "v1_additive": {
+          "avoided_mwh": 6145814.1,
+          "extra_mwh": 5691042.8,
+          "net_k2_mwh": 454771.2999999998,
+          "break_even": 1.926
+        },
+        "v2_proportional": {
+          "avoided_mwh": 6654938.3,
+          "extra_mwh": 5153164.9,
+          "net_k2_mwh": 1501773.3999999994,
+          "break_even": 1.774
+        }
+      },
+      "1h": {
+        "flat_15": {
+          "avoided_mwh": 5523600.7,
+          "extra_mwh": 2284809.0,
+          "net_k2_mwh": 3238791.7,
+          "break_even": 1.414
+        },
+        "expanding_ratio": {
+          "avoided_mwh": 4977610.7,
+          "extra_mwh": 1856523.8,
+          "net_k2_mwh": 3121086.9000000004,
+          "break_even": 1.373
+        },
+        "v1_additive": {
+          "avoided_mwh": 6109080.9,
+          "extra_mwh": 5674732.6,
+          "net_k2_mwh": 434348.30000000075,
+          "break_even": 1.929
+        },
+        "v2_proportional": {
+          "avoided_mwh": 6645287.5,
+          "extra_mwh": 5151286.3,
+          "net_k2_mwh": 1494001.2000000002,
+          "break_even": 1.775
+        }
+      },
+      "2h": {
+        "flat_15": {
+          "avoided_mwh": 5523600.7,
+          "extra_mwh": 2284809.0,
+          "net_k2_mwh": 3238791.7,
+          "break_even": 1.414
+        },
+        "expanding_ratio": {
+          "avoided_mwh": 4977610.7,
+          "extra_mwh": 1856523.8,
+          "net_k2_mwh": 3121086.9000000004,
+          "break_even": 1.373
+        },
+        "v1_additive": {
+          "avoided_mwh": 6086066.2,
+          "extra_mwh": 5647008.6,
+          "net_k2_mwh": 439057.60000000056,
+          "break_even": 1.928
+        },
+        "v2_proportional": {
+          "avoided_mwh": 6637501.4,
+          "extra_mwh": 5154472.9,
+          "net_k2_mwh": 1483028.5,
+          "break_even": 1.777
+        }
+      }
+    },
+    "lookback_hours": {
+      "24h": {
+        "flat_15": {
+          "avoided_mwh": 5523600.7,
+          "extra_mwh": 2284809.0,
+          "net_k2_mwh": 3238791.7,
+          "break_even": 1.414
+        },
+        "expanding_ratio": {
+          "avoided_mwh": 4969392.5,
+          "extra_mwh": 1852693.3,
+          "net_k2_mwh": 3116699.2,
+          "break_even": 1.373
+        },
+        "v1_additive": {
+          "avoided_mwh": 5894516.0,
+          "extra_mwh": 5511360.3,
+          "net_k2_mwh": 383155.7000000002,
+          "break_even": 1.935
+        },
+        "v2_proportional": {
+          "avoided_mwh": 6391249.7,
+          "extra_mwh": 4876344.2,
+          "net_k2_mwh": 1514905.5,
+          "break_even": 1.763
+        }
+      },
+      "48h": {
+        "flat_15": {
+          "avoided_mwh": 5523600.7,
+          "extra_mwh": 2284809.0,
+          "net_k2_mwh": 3238791.7,
+          "break_even": 1.414
+        },
+        "expanding_ratio": {
+          "avoided_mwh": 4977610.7,
+          "extra_mwh": 1856523.8,
+          "net_k2_mwh": 3121086.9000000004,
+          "break_even": 1.373
+        },
+        "v1_additive": {
+          "avoided_mwh": 6109080.9,
+          "extra_mwh": 5674732.6,
+          "net_k2_mwh": 434348.30000000075,
+          "break_even": 1.929
+        },
+        "v2_proportional": {
+          "avoided_mwh": 6645287.5,
+          "extra_mwh": 5151286.3,
+          "net_k2_mwh": 1494001.2000000002,
+          "break_even": 1.775
+        }
+      },
+      "72h": {
+        "flat_15": {
+          "avoided_mwh": 5523600.7,
+          "extra_mwh": 2284809.0,
+          "net_k2_mwh": 3238791.7,
+          "break_even": 1.414
+        },
+        "expanding_ratio": {
+          "avoided_mwh": 4979431.6,
+          "extra_mwh": 1862157.1,
+          "net_k2_mwh": 3117274.4999999995,
+          "break_even": 1.374
+        },
+        "v1_additive": {
+          "avoided_mwh": 6138065.5,
+          "extra_mwh": 5866745.9,
+          "net_k2_mwh": 271319.5999999996,
+          "break_even": 1.956
+        },
+        "v2_proportional": {
+          "avoided_mwh": 6729068.9,
+          "extra_mwh": 5128783.9,
+          "net_k2_mwh": 1600285.0,
+          "break_even": 1.762
+        }
+      }
+    },
+    "percentile": {
+      "p60": {
+        "flat_15": {
+          "avoided_mwh": 5523600.7,
+          "extra_mwh": 2284809.0,
+          "net_k2_mwh": 3238791.7,
+          "break_even": 1.414
+        },
+        "expanding_ratio": {
+          "avoided_mwh": 4977610.7,
+          "extra_mwh": 1856523.8,
+          "net_k2_mwh": 3121086.9000000004,
+          "break_even": 1.373
+        },
+        "v1_additive": {
+          "avoided_mwh": 5121557.1,
+          "extra_mwh": 3858633.7,
+          "net_k2_mwh": 1262923.3999999994,
+          "break_even": 1.753
+        },
+        "v2_proportional": {
+          "avoided_mwh": 5720693.0,
+          "extra_mwh": 3390483.2,
+          "net_k2_mwh": 2330209.8,
+          "break_even": 1.593
+        }
+      },
+      "p75": {
+        "flat_15": {
+          "avoided_mwh": 5523600.7,
+          "extra_mwh": 2284809.0,
+          "net_k2_mwh": 3238791.7,
+          "break_even": 1.414
+        },
+        "expanding_ratio": {
+          "avoided_mwh": 4977610.7,
+          "extra_mwh": 1856523.8,
+          "net_k2_mwh": 3121086.9000000004,
+          "break_even": 1.373
+        },
+        "v1_additive": {
+          "avoided_mwh": 6109080.9,
+          "extra_mwh": 5674732.6,
+          "net_k2_mwh": 434348.30000000075,
+          "break_even": 1.929
+        },
+        "v2_proportional": {
+          "avoided_mwh": 6645287.5,
+          "extra_mwh": 5151286.3,
+          "net_k2_mwh": 1494001.2000000002,
+          "break_even": 1.775
+        }
+      },
+      "p85": {
+        "flat_15": {
+          "avoided_mwh": 5523600.7,
+          "extra_mwh": 2284809.0,
+          "net_k2_mwh": 3238791.7,
+          "break_even": 1.414
+        },
+        "expanding_ratio": {
+          "avoided_mwh": 4977610.7,
+          "extra_mwh": 1856523.8,
+          "net_k2_mwh": 3121086.9000000004,
+          "break_even": 1.373
+        },
+        "v1_additive": {
+          "avoided_mwh": 6782946.3,
+          "extra_mwh": 7372858.6,
+          "net_k2_mwh": -589912.2999999998,
+          "break_even": 2.087
+        },
+        "v2_proportional": {
+          "avoided_mwh": 7191359.1,
+          "extra_mwh": 6854569.7,
+          "net_k2_mwh": 336789.39999999944,
+          "break_even": 1.953
+        }
+      },
+      "p90": {
+        "flat_15": {
+          "avoided_mwh": 5523600.7,
+          "extra_mwh": 2284809.0,
+          "net_k2_mwh": 3238791.7,
+          "break_even": 1.414
+        },
+        "expanding_ratio": {
+          "avoided_mwh": 4977610.7,
+          "extra_mwh": 1856523.8,
+          "net_k2_mwh": 3121086.9000000004,
+          "break_even": 1.373
+        },
+        "v1_additive": {
+          "avoided_mwh": 7074183.8,
+          "extra_mwh": 8401109.2,
+          "net_k2_mwh": -1326925.3999999994,
+          "break_even": 2.188
+        },
+        "v2_proportional": {
+          "avoided_mwh": 7448734.4,
+          "extra_mwh": 7985098.0,
+          "net_k2_mwh": -536363.5999999996,
+          "break_even": 2.072
+        }
+      }
+    }
+  }
+}

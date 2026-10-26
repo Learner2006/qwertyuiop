@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { BookOpen, TrendingDown, ShieldCheck, CheckCircle } from "lucide-react";
-import { fetchSummary } from "../api/client";
+import { BookOpen, TrendingDown, ShieldCheck, CheckCircle, Award } from "lucide-react";
+import { fetchSummary, fetchValidationSummary } from "../api/client";
 import { MonthSummaryResponse } from "../types";
 
 export const DocsPage: React.FC = () => {
   const [summaryData, setSummaryData] = useState<MonthSummaryResponse | null>(null);
+  const [validationData, setValidationData] = useState<any | null>(null);
 
   useEffect(() => {
     fetchSummary().then(setSummaryData).catch(() => {});
+    fetchValidationSummary().then(setValidationData).catch(() => {});
     if (window.location.hash) {
       const element = document.querySelector(window.location.hash);
       if (element) {
@@ -272,6 +274,103 @@ export const DocsPage: React.FC = () => {
             <p>• Simple scalar margin applied uniformly across all 48 target half-hours.</p>
           </div>
         </div>
+      </section>
+
+      {/* 8. Out-of-Time Model Validation (Feb–Sep 2026) */}
+      <section id="validation" className="space-y-4 pb-12 pt-6 border-t border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h2 className="text-xl font-bold text-slate-900 flex items-center space-x-2">
+            <span className="w-6 h-6 rounded-md bg-indigo-100 text-indigo-700 text-xs flex items-center justify-center font-bold">8</span>
+            <span>Out-of-Time Model Validation (Feb–Sep 2026)</span>
+          </h2>
+          <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+            <Award className="w-3.5 h-3.5 mr-1" />
+            Decision: {validationData?.winner?.model?.toUpperCase() || "FLAT_15"} Confirmed
+          </span>
+        </div>
+
+        <p className="text-sm text-slate-600 leading-relaxed">
+          To verify model durability beyond January 2026 without data leakage or post-hoc tuning, candidate models were evaluated under frozen protocol (<code className="bg-slate-100 px-1 py-0.5 rounded text-xs font-mono">PROTOCOL_v2.md</code>) across 8 out-of-time months ({validationData?.metadata?.total_delivery_days || 241} delivery days, {validationData?.metadata?.total_settlement_intervals?.toLocaleString() || "11,568"} half-hour intervals).
+        </p>
+
+        {validationData ? (
+          <div className="space-y-6">
+            {/* Aggregate Table */}
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
+              <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Aggregate Out-of-Time Benchmark (Feb 1 – Sep 30, 2026)
+                </span>
+                <span className="text-[11px] font-mono text-slate-500">
+                  SHA-256: {validationData.metadata.sha256.slice(0, 12)}...
+                </span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50/50 text-slate-500 font-semibold border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3">Model</th>
+                      <th className="py-2.5 px-3 text-right">Avoided Shortfall</th>
+                      <th className="py-2.5 px-3 text-right">Extra Advance</th>
+                      <th className="py-2.5 px-3 text-right">Net MWh (k=2)</th>
+                      <th className="py-2.5 px-3 text-right">Break-Even (k*)</th>
+                      <th className="py-2.5 px-3 text-right">Days BE &lt; 2x</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {Object.entries(validationData.overall_results).map(([mKey, row]: [string, any]) => {
+                      const isWinner = mKey === validationData.winner.model;
+                      return (
+                        <tr key={mKey} className={isWinner ? "bg-emerald-50/50 font-semibold" : "hover:bg-slate-50/50"}>
+                          <td className="py-2.5 px-3 flex items-center space-x-1.5">
+                            <span className="font-mono text-slate-900">{mKey}</span>
+                            {isWinner && (
+                              <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold">
+                                Winner
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono text-emerald-700">
+                            +{Math.round(row.avoided_shortfall_mwh).toLocaleString()} MWh
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono text-slate-600">
+                            +{Math.round(row.extra_advance_mwh).toLocaleString()} MWh
+                          </td>
+                          <td className={`py-2.5 px-3 text-right font-mono ${row.net_k2_s0_mwh > 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                            {row.net_k2_s0_mwh > 0 ? "+" : ""}{Math.round(row.net_k2_s0_mwh).toLocaleString()} MWh
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono text-slate-800">
+                            {row.break_even_price_ratio.toFixed(3)}×
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono text-slate-700">
+                            {row.days_break_even_under_2x} / {row.total_days}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Matched Cut Benchmark */}
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+              <span className="font-bold text-slate-900 block">Matched-Cut Test: Dynamic vs Static Haircuts</span>
+              <p className="text-slate-600 leading-relaxed">
+                When tested against static haircuts of the identical total volume, dynamic rolling percentile models (<code className="font-mono text-slate-800">v1_additive</code> and <code className="font-mono text-slate-800">v2_proportional</code>) substantially underperformed static uniform haircuts (-1.83M MWh and -765k MWh advantage deficits). Rolling quantiles over-cut during calm summer regimes, destroying value.
+              </p>
+              <div className="pt-1">
+                <a href="/docs/VALIDATION.md" target="_blank" rel="noreferrer" className="text-sky-700 underline font-medium">
+                  Read complete out-of-time validation analysis & sensitivity tables in docs/VALIDATION.md →
+                </a>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-500">
+            Loading out-of-time validation data...
+          </div>
+        )}
       </section>
     </div>
   );

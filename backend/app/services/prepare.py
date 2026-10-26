@@ -38,8 +38,8 @@ class DataManager:
         self._precompute_day_ahead_forecasts()
 
     def _precompute_day_ahead_forecasts(self):
-        """Precompute canonical day-ahead forecast for every half-hour target in Jan 2026.
-        For each decision date D (Jan 1 to Jan 30) at 09:00 UTC, the forecast for target D+1
+        """Precompute canonical day-ahead forecast for every half-hour target in dataset.
+        For each decision date D at 09:00 UTC, the forecast for target D+1
         is the latest published version at or before 09:00 UTC on day D.
         """
         self._day_ahead_cache.clear()
@@ -48,24 +48,51 @@ class DataManager:
             settings.DECISION_CUTOFF_MINUTE_UTC
         )
         
-        for d in range(1, 31):
-            dec_date = datetime.date(2026, 1, d)
-            target_date = dec_date + datetime.timedelta(days=1)
+        unique_target_dates = sorted(self._actuals_df["interval_start"].dt.date.unique())
+        for target_date in unique_target_dates:
+            dec_date = target_date - datetime.timedelta(days=1)
             cutoff_dt = pd.Timestamp(datetime.datetime.combine(dec_date, cutoff_time), tz="UTC")
-            
-            # Forecasts published at or before cutoff
-            eligible_fc = self._forecasts_df[self._forecasts_df["publish_time"] <= cutoff_dt]
             
             # Target intervals for D+1
             t_start = pd.Timestamp(datetime.datetime.combine(target_date, datetime.time(0, 0)), tz="UTC")
             t_end = pd.Timestamp(datetime.datetime.combine(target_date, datetime.time(23, 30)), tz="UTC")
-            target_intervals = pd.date_range(t_start, t_end, freq="30min")
             
-            target_fc = eligible_fc[eligible_fc["interval_start"].isin(target_intervals)]
-            # Take the latest published forecast for each half-hour
-            latest_versions = target_fc.sort_values("publish_time").groupby("interval_start").last()
-            for istart, row in latest_versions.iterrows():
-                self._day_ahead_cache[istart] = float(row["generation_gw"])
+            # Fast filter for target intervals published at or before cutoff
+            mask = (
+                (self._forecasts_df["interval_start"] >= t_start)
+                & (self._forecasts_df["interval_start"] <= t_end)
+                & (self._forecasts_df["publish_time"] <= cutoff_dt)
+            )
+            target_fc = self._forecasts_df[mask]
+            if not target_fc.empty:
+                latest_versions = target_fc.sort_values("publish_time").groupby("interval_start").last()
+                for istart, val in zip(latest_versions.index, latest_versions["generation_gw"]):
+                    self._day_ahead_cache[istart] = float(val)
+
+    def set_operational_parameters(
+        self,
+        cutoff_hour: Optional[int] = None,
+        lag_hours: Optional[int] = None,
+        lookback_hours: Optional[int] = None,
+    ):
+        """Temporarily updates operational parameters and refreshes precomputed forecast cache."""
+        if cutoff_hour is not None:
+            settings.DECISION_CUTOFF_HOUR_UTC = cutoff_hour
+        if lag_hours is not None:
+            settings.ACTUALS_PUBLICATION_LAG_HOURS = lag_hours
+        if lookback_hours is not None:
+            settings.LOOKBACK_HOURS = lookback_hours
+            settings.BLEND_THRESHOLD_OBSERVATIONS = lookback_hours * 2
+        self._precompute_day_ahead_forecasts()
+
+    def reset_operational_parameters(self):
+        """Resets operational parameters to config defaults."""
+        settings.DECISION_CUTOFF_HOUR_UTC = 9
+        settings.DECISION_CUTOFF_MINUTE_UTC = 0
+        settings.ACTUALS_PUBLICATION_LAG_HOURS = 1
+        settings.LOOKBACK_HOURS = 48
+        settings.BLEND_THRESHOLD_OBSERVATIONS = 96
+        self._precompute_day_ahead_forecasts()
 
     def get_dataset_metadata(self) -> dict:
         if self._actuals_df is None or len(self._actuals_df) == 0:
@@ -145,18 +172,21 @@ class DataManager:
         actuals_available_cutoff = cutoff_dt - pd.Timedelta(hours=settings.ACTUALS_PUBLICATION_LAG_HOURS)
         available_actuals = self._actuals_df[self._actuals_df["publish_time"] <= actuals_available_cutoff]
         
+        # Fast slice of most recent available records (never need more than 3x blend threshold)
+        if len(available_actuals) > settings.BLEND_THRESHOLD_OBSERVATIONS * 3:
+            available_actuals = available_actuals.iloc[-settings.BLEND_THRESHOLD_OBSERVATIONS * 3:]
+
         # Match with canonical day-ahead forecast
         history = []
-        for _, act_row in available_actuals.iterrows():
-            istart = act_row["interval_start"]
+        for istart, act_gw in zip(available_actuals["interval_start"], available_actuals["generation_gw"]):
             if istart in self._day_ahead_cache:
                 fc_gw = self._day_ahead_cache[istart]
-                act_gw = float(act_row["generation_gw"])
+                act_gw_val = float(act_gw)
                 history.append({
                     "interval_start": istart,
                     "forecast_gw": fc_gw,
-                    "actual_gw": act_gw,
-                    "error_gw": fc_gw - act_gw,
+                    "actual_gw": act_gw_val,
+                    "error_gw": fc_gw - act_gw_val,
                 })
         
         # Sort and take at most BLEND_THRESHOLD_OBSERVATIONS (96)

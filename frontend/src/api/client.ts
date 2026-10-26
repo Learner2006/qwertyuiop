@@ -38,3 +38,11 @@ export async function fetchCheck(date: string, percentile: number): Promise<Chec
   }
   return res.json();
 }
+
+export async function fetchValidationSummary(): Promise<any> {
+  const res = await fetch(`${BASE_URL}/api/validation`);
+  if (!res.ok) {
+    throw new Error(`Validation summary request failed with HTTP ${res.status}`);
+  }
+  return res.json();
+}

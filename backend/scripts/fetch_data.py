@@ -1,8 +1,9 @@
-"""Script to fetch official Elexon BMRS WINDFOR and FUELHH data for January 2026.
+"""Script to fetch public Elexon BMRS WINDFOR and FUELHH data.
 Adheres to Elexon API limitations (max 7-day query window) and saves a clean,
-reproducible Parquet file to backend/app/data/jan2026.parquet.
+reproducible Parquet file to backend/app/data/.
 """
 
+import argparse
 import datetime
 import json
 import logging
@@ -16,11 +17,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("fetch_data")
 
 ELEXON_BASE_URL = "https://data.elexon.co.uk/bmrs/api/v1/datasets"
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "app", "data")
-OUTPUT_FILE = os.path.join(OUTPUT_DIR, "jan2026.parquet")
+OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app", "data"))
+JAN2026_FILE = os.path.join(OUTPUT_DIR, "jan2026.parquet")
+VALIDATION_FILE = os.path.join(OUTPUT_DIR, "validation_2026-01-29_to_2026-09-30.parquet")
 
 
-def fetch_url_json(url: str, retries: int = 3, timeout: int = 45) -> dict:
+def fetch_url_json(url: str, retries: int = 5, timeout: int = 45) -> dict:
     headers = {"User-Agent": "WindDayAheadEstimator/1.0 (+https://elexon.co.uk)"}
     for attempt in range(1, retries + 1):
         try:
@@ -37,11 +39,9 @@ def fetch_url_json(url: str, retries: int = 3, timeout: int = 45) -> dict:
     return {}
 
 
-def fetch_fuelhh_jan2026() -> list:
-    """Fetch actual wind generation from FUELHH for all of Jan 2026 in 7-day chunks."""
-    logger.info("Fetching FUELHH data for January 2026...")
-    start_date = datetime.date(2026, 1, 1)
-    end_date = datetime.date(2026, 1, 31)
+def fetch_fuelhh_range(start_date: datetime.date, end_date: datetime.date) -> list:
+    """Fetch actual wind generation from FUELHH for a date range in 7-day chunks."""
+    logger.info("Fetching FUELHH data from %s to %s...", start_date, end_date)
     cur = start_date
     records = []
 
@@ -62,11 +62,9 @@ def fetch_fuelhh_jan2026() -> list:
     return records
 
 
-def fetch_windfor_jan2026() -> list:
-    """Fetch wind generation forecast from WINDFOR published across January 2026 in 7-day chunks."""
-    logger.info("Fetching WINDFOR forecast records for January 2026...")
-    start_date = datetime.date(2026, 1, 1)
-    end_date = datetime.date(2026, 1, 31)
+def fetch_windfor_range(start_date: datetime.date, end_date: datetime.date) -> list:
+    """Fetch wind generation forecast from WINDFOR published across a date range in 7-day chunks."""
+    logger.info("Fetching WINDFOR forecast records from %s to %s...", start_date, end_date)
     cur = start_date
     records = []
 
@@ -151,9 +149,31 @@ def process_and_save(fuelhh_records: list, windfor_records: list, output_path: s
 
 
 def main():
-    fuelhh = fetch_fuelhh_jan2026()
-    windfor = fetch_windfor_jan2026()
-    process_and_save(fuelhh, windfor, OUTPUT_FILE)
+    parser = argparse.ArgumentParser(description="Fetch Elexon BMRS WINDFOR and FUELHH data")
+    parser.add_argument(
+        "--dataset",
+        choices=["jan2026", "validation"],
+        default="jan2026",
+        help="Target dataset to fetch (default: jan2026)",
+    )
+    parser.add_argument("--output", type=str, default=None, help="Custom output parquet path")
+    args = parser.parse_args()
+
+    if args.dataset == "jan2026":
+        start_date = datetime.date(2026, 1, 1)
+        end_date = datetime.date(2026, 1, 31)
+        output_file = args.output or JAN2026_FILE
+    elif args.dataset == "validation":
+        start_date = datetime.date(2026, 1, 29)
+        end_date = datetime.date(2026, 9, 30)
+        output_file = args.output or VALIDATION_FILE
+    else:
+        raise ValueError(f"Unknown dataset: {args.dataset}")
+
+    logger.info("Target dataset: %s (%s to %s) -> %s", args.dataset, start_date, end_date, output_file)
+    fuelhh = fetch_fuelhh_range(start_date, end_date)
+    windfor = fetch_windfor_range(start_date, end_date)
+    process_and_save(fuelhh, windfor, output_file)
 
 
 if __name__ == "__main__":

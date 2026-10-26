@@ -102,12 +102,19 @@ def replay(
     completed_history_fcs: Dict[datetime.date, List[dict]] = {}
 
     if needs_expanding_history:
-        # Load all potential target days for January 2026
-        for d_num in range(1, 31):
-            d_date = datetime.date(2026, 1, d_num)
-            inp = get_cached_day_inputs(d_date, mgr)
-            completed_history_acts[inp["target_date"]] = inp["acts"]
-            completed_history_fcs[inp["target_date"]] = inp["fc"]
+        # Load all potential target days across the evaluation window
+        min_date = min(dates)
+        max_date = max(dates)
+        cur = min_date - datetime.timedelta(days=2)
+        end = max_date + datetime.timedelta(days=1)
+        while cur <= end:
+            try:
+                inp = get_cached_day_inputs(cur, mgr)
+                completed_history_acts[inp["target_date"]] = inp["acts"]
+                completed_history_fcs[inp["target_date"]] = inp["fc"]
+            except Exception:
+                pass
+            cur += datetime.timedelta(days=1)
 
     per_day: List[Dict[str, Any]] = []
 
@@ -155,7 +162,7 @@ def replay(
             comp_acts = []
             comp_fcs = []
             cur_target = dec_date  # target day that delivered up to 00:00 UTC on dec_date is dec_date
-            start_target = datetime.date(2026, 1, 2)
+            start_target = min(completed_history_acts.keys()) if completed_history_acts else dec_date
             d_walk = start_target
             while d_walk < cur_target:
                 if d_walk in completed_history_acts:
