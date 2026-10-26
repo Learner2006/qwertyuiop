@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState, lazy } from "react";
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
-import { LandingPage } from "./pages/LandingPage";
-import { EstimatePage } from "./pages/EstimatePage";
-import { CheckPage } from "./pages/CheckPage";
-import { DocsPage } from "./pages/DocsPage";
 import { APP_CONFIG } from "./config";
+
+const LandingPage = lazy(() => import("./pages/LandingPage").then(m => ({ default: m.LandingPage })));
+const EstimatePage = lazy(() => import("./pages/EstimatePage").then(m => ({ default: m.EstimatePage })));
+const CheckPage = lazy(() => import("./pages/CheckPage").then(m => ({ default: m.CheckPage })));
+const DocsPage = lazy(() => import("./pages/DocsPage").then(m => ({ default: m.DocsPage })));
 
 export const App: React.FC = () => {
   const [currentPath, setCurrentPath] = useState<string>(window.location.pathname || "/");
@@ -77,7 +78,11 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans">
       <Navbar currentPath={currentPath} onNavigate={navigateTo} />
-      <main className="flex-1">{renderContent()}</main>
+      <main className="flex-1">
+        <Suspense fallback={<div className="min-h-[50vh] flex items-center justify-center text-slate-400 font-mono text-sm">Loading view...</div>}>
+          {renderContent()}
+        </Suspense>
+      </main>
       <Footer />
     </div>
   );

@@ -1,338 +1,287 @@
 # Wind Day-Ahead Estimator
 
-> *“Elexon forecasts wind. We estimate how much of it a buyer can safely rely on.”*
+> **Risk-calibrated day-ahead wind power procurement estimator for Great Britain wholesale electricity markets.**
 
-[![Dataset: Elexon BMRS](https://img.shields.io/badge/Dataset-Elexon%20BMRS%20(Jan%202026)-0284c7)](https://data.elexon.co.uk)
-[![Python: 3.9-3.12](https://img.shields.io/badge/Backend-FastAPI%20%7C%20Python%203.9--3.12-blue)](https://fastapi.tiangolo.com)
-[![Frontend: React + Vite](https://img.shields.io/badge/Frontend-React%20%7C%20TypeScript%20%7C%20Vite-61dafb)](https://vitejs.dev)
-[![Tests: 59 Passed](https://img.shields.io/badge/Tests-59%20Passed%20(Oracles%2C%20Properties%2C%20Bootstrap)-success)](scripts/check.sh)
-
-A complete, deployable MVP that applies a deliberately cautious adjustment to Elexon's day-ahead wind generation forecast and replays the outcome against actual generation to evaluate avoided shortfall energy across January 2026.
-
----
-
-## Table of Contents
-
-1. [Product Overview](#product-overview)
-2. [Problem Statement](#problem-statement)
-3. [User Journey & Interface](#user-journey--interface)
-4. [System Architecture](#system-architecture)
-5. [Data Sources & Provenance](#data-sources--provenance)
-6. [Historical Replay & No-Leakage Rules](#historical-replay--no-leakage-rules)
-7. [Estimation Methodology](#estimation-methodology)
-8. [Reliability & Evaluation Metrics](#reliability--evaluation-metrics)
-9. [Local Development & Setup](#local-development--setup)
-10. [Automated Verification & Testing](#automated-verification--testing)
-11. [Docker & Deployment](#docker--deployment)
-12. [Assumptions & Known Limitations](#assumptions--known-limitations)
-13. [Future Scope](#future-scope)
+[![Verification Suite](https://img.shields.io/badge/Verification-59%20Tests%20Passing-success?style=flat-square)](scripts/check.sh)
+[![Python](https://img.shields.io/badge/Python-3.9%20%7C%203.12-blue?style=flat-square)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI%200.128-009688?style=flat-square)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/Frontend-React%2018%20%7C%20TypeScript%20%7C%20Vite-61dafb?style=flat-square)](https://vitejs.dev)
+[![Docker](https://img.shields.io/badge/Docker-Compose%20Ready-2496ed?style=flat-square)](docker-compose.yml)
+[![Dataset](https://img.shields.io/badge/Data-Elexon%20BMRS%20(WINDFOR%20%26%20FUELHH)-0284c7?style=flat-square)](https://data.elexon.co.uk)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
 ---
 
-## Product Overview
+## Overview
 
-A UK electricity buyer planning tomorrow's wholesale power procurement must decide how much intermittent wind generation to count on. If actual wind generation falls below the planned quantity, the buyer faces a **shortfall** and must procure emergency replacement electricity closer to real-time. If wind exceeds the planned quantity, the buyer has arranged more advance supply than required.
+In GB wholesale electricity procurement, wind generation forecast errors are financially asymmetric: when realized wind falls below the planned day-ahead volume, the buyer is **short** and must purchase emergency replacement electricity at volatile, often elevated same-day or cash-out prices.
 
-**Wind Day-Ahead Estimator** takes Elexon's published wind forecast and applies a deterministic, data-driven margin based on recent historical errors and a 15% cold-start haircut rule. The product provides:
-- A safe day-ahead wind generation estimate in **GW**.
-- An indicative empirical uncertainty band (10th to 90th percentiles).
-- An interactive risk slider ($p60$ to $p90$) to tune buyer conservatism.
-- A full historical replay against realized generation outturns across all 30 decision dates in January 2026.
-- Transparent reporting of avoided shortfall energy (MWh), additional advance wind (MWh), and Mean Absolute Error (GW).
+**Wind Day-Ahead Estimator** ingests published Elexon BMRS `WINDFOR` forecasts and applies an empirical, risk-calibrated margin to produce a **safe day-ahead wind estimate (GW)** that protects procurement schedules against over-forecast risks. Outcomes are evaluated against metered national wind outturns (`FUELHH`) to quantify avoided shortfall energy, incremental advance supply, and net procurement benefit.
 
----
-
-## Problem Statement
-
-When procurement teams rely solely on unadjusted central forecasts:
-1. **Forecast errors are asymmetrical in financial impact:** A shortfall often carries severe price spikes in the balancing mechanism or intraday market, whereas surplus wind can typically be spilled or curtailed.
-2. **Buyers lack transparent risk controls:** Most off-the-shelf forecasts provide a single $P_{50}$ point estimate without showing the empirical downside distribution or lookback calibration coverage.
-3. **Black-box models leak future information:** Traditional demos often contaminate calibration with data from after the decision cutoff or substitute subsequent revisions for historical forecasts.
-
-This MVP demonstrates a transparent, reproducible, leak-free solution using real historical Elexon data.
-
----
-
-## User Journey & Interface
-
-The application comprises four integrated pages:
-
-1. **Overview / Landing Page (`/`):** Explains the buyer's shortfall dilemma, the 3-step workflow, and the fundamental trade-off between avoided shortfall and extra advance supply.
-2. **Estimate Page (`/jan25`):** Displays tomorrow's raw Elexon forecast alongside our safe estimate and indicative band for any decision date in January 2026, with an interactive risk slider and calibration coverage badge. Strictly no target-day actuals are visible.
-3. **Reliability Check Page (`/jan25/check`):** Replays the decision against actual realized generation (`FUELHH`), presenting range comparisons, half-hourly forecast-versus-actual charts with amber shortfall highlights, shortfall comparison bars, avoided shortfall energy, and MAE.
-4. **Methodology Documentation (`/docs`):** Details equations, data pipelines, timestamp semantics, and assumptions so an external analyst can reproduce every calculation.
-
-### Interface Screenshots
-
-<!-- Screenshot Placeholders -->
-| Overview Page | Estimate Page |
-| :---: | :---: |
-| ![Landing Page Preview](docs/screenshots/landing.png)<br>*Landing page: Problem definition and 3-step workflow* | ![Estimate Page Preview](docs/screenshots/estimate.png)<br>*Estimate page: Our safe estimate vs Elexon raw forecast with risk slider* |
-
-| Reliability Check Page | Methodology Page |
-| :---: | :---: |
-| ![Check Page Preview](docs/screenshots/check.png)<br>*Check page: Forecast vs actual with shortfall shading and saved MWh* | ![Docs Page Preview](docs/screenshots/docs.png)<br>*Documentation: Mathematical definitions and replay rules* |
-
----
-
-## System Architecture
-
-```mermaid
-flowchart TD
-    subgraph Elexon["Public Elexon BMRS API"]
-        WF["WINDFOR Dataset<br/>(Forecast Vintages)"]
-        FHH["FUELHH Dataset<br/>(Actual Wind Outturn)"]
-    end
-
-    subgraph DataPipeline["Data Ingestion & Preparation"]
-        FETCH["fetch_data.py<br/>(7-Day Chunks, UTC Normalization)"]
-        PARQUET["jan2026.parquet<br/>(37,696 Cached Records, 252 KB)"]
-        PREPARE["prepare.py DataManager<br/>(Cutoff Enforcement, 09:00 UTC)"]
-    end
-
-    subgraph Backend["FastAPI Backend Services"]
-        CALIB["calibrate.py<br/>(Percentile Margin, 15% Cold Start, Blend)"]
-        METRICS["metrics.py<br/>(Shortfall MWh, Saved MWh, Extra Advance, MAE)"]
-        API_EST["/api/estimate<br/>(Target Forecast + Calibration, No Leakage)"]
-        API_CHK["/api/check<br/>(Forecast + Actuals + Metrics)"]
-        API_HLT["/api/health<br/>(Dataset Availability & Date Coverage)"]
-    end
-
-    subgraph Frontend["React 18 + TypeScript + Vite"]
-        NAV["SPA Router<br/>(/, /jan25, /jan25/check, /docs)"]
-        PAGE_EST["Estimate Page<br/>(Risk Slider p60-p90, Half-Hourly Chart)"]
-        PAGE_CHK["Check Page<br/>(Shortfall Bars, Amber Shading, Range Markers)"]
-        PAGE_DOCS["Methodology Page<br/>(Equations, Assumptions, Limitations)"]
-    end
-
-    WF --> FETCH
-    FHH --> FETCH
-    FETCH --> PARQUET
-    PARQUET --> PREPARE
-    PREPARE --> CALIB
-    PREPARE --> METRICS
-    CALIB --> API_EST
-    CALIB --> API_CHK
-    METRICS --> API_CHK
-    API_EST --> PAGE_EST
-    API_CHK --> PAGE_CHK
+```
+       [ Elexon Central Forecast (WINDFOR) ]
+                         │
+                         ▼
+        [ Strict 09:00 UTC Decision Cutoff ] ── (1h Outturn Publication Lag)
+                         │
+                         ▼
+        [ Calibrated Estimator (flat_15) ] ── Headline Model (+3.24M Net MWh)
+                         │
+         ┌───────────────┴───────────────┐
+         ▼                               ▼
+ [ Day-Ahead Estimate (GW) ]    [ Indicative Range ]
+ (Physical Delivery Schedule)   (Empirical Error Band)
 ```
 
 ---
 
-## Data Sources & Provenance
+## Application Interface
 
-Data is ingested from the public **Elexon Insights Solution / BMRS API**:
+| Overview & Problem Framing | Day-Ahead Estimate (`/jan25`) |
+| :---: | :---: |
+| ![Landing Page Preview](docs/screenshots/landing.png)<br><sub>Landing view: Shortfall dilemma and workflow</sub> | ![Estimate Page Preview](docs/screenshots/estimate.png)<br><sub>Estimate view: Safe plan vs Elexon raw forecast with risk slider</sub> |
 
-| Series | BMRS Dataset Code | Source Endpoint | Granularity | Units | Role in Application |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Wind Forecast** | `WINDFOR` | `/bmrs/api/v1/datasets/WINDFOR` | Hourly schedules (mapped to 2 SPs) | MW $\rightarrow$ GW | Day-ahead generation forecast |
-| **Actual Wind** | `FUELHH` | `/bmrs/api/v1/datasets/FUELHH` (`fuelType=WIND`) | Half-hourly (48 SPs / day) | MW $\rightarrow$ GW | Target outcome & historical calibration |
-
-### Unit Normalization
-- **Power (UI & Headlines):** Gigawatts (GW). Formula: $\text{GW} = \text{MW} / 1000.0$.
-- **Energy (Shortfall & Metrics):** Megawatt-hours (MWh). Formula: $\text{MWh} = \text{GW} \times 1000.0 \times 0.5\text{ hours} = \text{MW} \times 0.5$.
-- **Timestamps:** Timezone-aware UTC throughout. Each half-hour interval is keyed by its canonical interval start timestamp (e.g. `2026-01-15T00:00:00Z`).
+| Outturn Check (`/jan25/check`) | Methodology & Validation (`/docs`) |
+| :---: | :---: |
+| ![Check Page Preview](docs/screenshots/check.png)<br><sub>Reliability check: Forecast vs actual with shortfall shading</sub> | ![Docs Page Preview](docs/screenshots/docs.png)<br><sub>Methodology documentation: Mathematical proofs and validation records</sub> |
 
 ---
 
-## Historical Replay & No-Leakage Rules
+## Quick Start
 
-For a decision made on date $D$ for target delivery date $D+1$:
-1. **Decision Cutoff:** Fixed at or before **09:00:00 UTC** on date $D$.
-2. **Forecast Selection:** Selects the latest forecast vintage published strictly at or before 09:00 UTC on day $D$ covering intervals of target date $D+1$. Forecasts published after 09:00 UTC are strictly excluded.
-3. **Historical Calibration Selection:** Calibration uses only intervals where both the day-ahead forecast and actual generation were published at or before 09:00 UTC on day $D$.
-4. **No Future Data Leakage:** Forecasts published and actuals recorded after 09:00 UTC on the decision day are never used. Evaluated across automated replay isolation tests (`test_no_leakage.py`).
-5. **Core Premise:** We assume replacement power bought close to delivery tends to cost more than power arranged in advance. We don’t model market prices directly, so results are evaluated in physical MWh trade-offs and break-even price ratios.
-6. **January 2026 Model Benchmark Results:** Across 30 decision days (1,440 half-hours), candidate models evaluated on January 2026 data at $s=0$ (unrecoverable surplus) break even when replacement power costs more than $k^* \times$ advance power:
+### Option 1: Docker Compose (Production-Ready)
 
-| Model | Status | Avoided Shortfall (MWh) | Incremental Extra (MWh) | Break-Even ($k^*$) | Days where break-even < 2x |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **`flat_15`** | **Selected Production Headline (M3 Rule)** | **1,016,662 MWh** | **411,934 MWh** | **1.405×** | **22 / 30 days** |
-| `expanding_ratio` | Exploratory (Realization Ratio) | 880,743 MWh | 306,775 MWh | 1.348× | 23 / 30 days |
-| `v2_proportional` | Exploratory (Relative Error p75) | 1,022,628 MWh | 905,978 MWh | 1.886× | 18 / 30 days |
-| `v1_additive` | Pre-declared Baseline (p75) | 968,903 MWh | 985,528 MWh | 2.017× | 17 / 30 days |
+Run the entire containerized stack with a single command:
 
-Raw Elexon forecast: 9,523,977 MWh vs 8,247,142 MWh actual outturn (+15.5% of outturn, +13.4% of forecast; raw shortfall: 1,385,929 MWh). Both sides (avoided shortfall and extra supply) are reported strictly from API calculations. Full selection protocol and holdout results are recorded in [`docs/PROTOCOL.md`](docs/PROTOCOL.md).
-
----
-
-## Estimation Methodology
-
-### 1. Signed Forecast Error
-For each historical half-hourly interval $t$ in the lookback window:
-$$\text{error}_t = \text{forecast}_t - \text{actual}_t$$
-- $\text{error}_t > 0$: Forecast was higher than actual (over-forecast; shortfall risk).
-- $\text{error}_t < 0$: Actual wind was higher than forecast.
-
-### 2. Data-Driven Margin
-For a user-selected risk percentile $p \in [60, 90]$ (default 75):
-$$\text{data\_margin} = \max\left(0, \text{Percentile}(\{\text{error}_t\}, p)\right)$$
-*Zero Flooring:* If the empirical percentile error is negative, the margin is floored at 0 so the model never increases planned wind beyond Elexon's forecast.
-
-### 3. Cold Start & Linear Blending
-- **Cold-Start Haircut:** $15\%$ of raw forecast ($\text{cold\_margin} = \max(0, \text{raw\_forecast}) \times 0.15$).
-- **History Weight:** For $n$ valid calibration observations in the 48-hour lookback:
-  $$\text{weight} = \min\left(1.0, \frac{n}{96}\right)$$
-- **Blended Margin:**
-  $$\text{applied\_margin} = (1 - \text{weight}) \times \text{cold\_margin} + \text{weight} \times \text{data\_margin}$$
-- **Safe Estimate:**
-  $$\text{safe\_estimate\_GW} = \max(0, \text{raw\_forecast\_GW} - \text{applied\_margin})$$
-
-### 4. Calibration Confidence Labels
-- **Low:** $n < 24$ observations (pure cold-start or early Jan; heavy 15% haircut).
-- **Medium:** $24 \le n \le 95$ observations (linear history blend).
-- **High:** $n = 96$ observations (100% empirical data margin).
-
-### 5. Indicative Error Band
-- Lower Bound: $\max(0, \text{raw\_forecast} - \text{applied\_quantile}_{90})$
-- Upper Bound: $\max(\text{lower\_bound}, \text{raw\_forecast} - \text{applied\_quantile}_{10})$
-
----
-
-## Reliability & Evaluation Metrics
-
-For interval duration $dt = 0.5$ hours:
-
-### 1. Shortfall Energy (MWh)
-$$\text{shortfall\_MWh} = \sum_{t=1}^{48} \max(0, \text{Planned}_{t,\text{GW}} - \text{Actual}_{t,\text{GW}}) \times 1000 \times dt$$
-Calculated independently for Elexon raw forecast and our safe estimate.
-
-### 2. Avoided Shortfall Energy (MWh)
-$$\text{saved\_MWh} = \text{elexon\_shortfall\_MWh} - \text{our\_shortfall\_MWh}$$
-*Honest Reporting:* Evaluates how much physical shortfall is avoided by the cautious plan.
-
-### 3. Incremental Extra Supply Arranged (MWh)
-$$\text{extra\_supply\_MWh} = \text{safe\_surplus\_MWh} - \text{elexon\_surplus\_MWh}$$
-Measures the additional advance supply arranged by the cautious plan relative to the raw forecast.
-Together, avoided shortfall and incremental surplus conserve total cut volume exactly:
-$$\text{avoided\_shortfall\_MWh} + \text{extra\_supply\_MWh} = \text{total\_cut\_volume\_MWh}$$
-
-### 4. Economic Net Saving & Break-Even Ratio
-$$\text{net\_saving} = [\text{avoided\_shortfall\_MWh} \times (k - 1) - \text{extra\_supply\_MWh} \times (1 - s)] \times P_{\text{adv}}$$
-$$\text{break\_even\_ratio } k^* = 1 + (1 - s) \times \frac{\text{extra\_supply\_MWh}}{\text{avoided\_shortfall\_MWh}}$$
-Where $k = P_{\text{rep}} / P_{\text{adv}}$ is the replacement power cost premium ratio, and $s \in [0, 1]$ is the surplus recovery fraction (default $s = 0.0$).
-
-### 5. Mean Absolute Error (MAE in GW)
-$$\text{MAE} = \frac{1}{48} \sum_{t=1}^{48} |\text{Prediction}_{t,\text{GW}} - \text{Actual}_{t,\text{GW}}|$$
-
-### 6. Empirical Band Coverage & Realised Coverage
-The nominal $[p10, p90]$ band is an empirical historical error range, not a calibrated probabilistic prediction interval. Across January 2026, realised coverage is 55.8% (ranging from 0% on calm transition days to 100% on steady wind days). Across Feb–Sep 2026 out-of-time validation, realised coverage is 62.5%.
-
----
-
-## Local Development & Setup
-
-### Prerequisites
-- Python 3.9+
-- Node.js 18+ and npm
-
-### 1. Clone & Set Up Backend
 ```bash
-# Navigate to backend
+docker compose up --build
+```
+
+- **Frontend Application (Nginx reverse proxy):** [http://localhost:3000](http://localhost:3000)
+- **Backend API:** [http://localhost:8000](http://localhost:8000)
+- **Interactive OpenAPI Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Health Check:** `curl http://localhost:8000/api/health`
+
+To stop the containers:
+```bash
+docker compose down
+```
+
+---
+
+### Option 2: Native Local Development
+
+#### Prerequisites
+- **Python:** 3.9, 3.10, 3.11, or 3.12
+- **Node.js:** 18+ and `npm`
+
+#### 1. Backend Setup
+```bash
+# From repository root:
 cd backend
-
-# Install dependencies
-pip install -r requirements.txt
-
-# (Optional) Re-fetch fresh Elexon data or validate existing parquet
-python scripts/validate_data.py
+python3 -m pip install -r requirements.txt
+python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
 ```
+*API live at `http://127.0.0.1:8001`. Interactive docs at `http://127.0.0.1:8001/docs`.*
 
-### 2. Start Backend Server
+#### 2. Frontend Setup
 ```bash
-# From repo root, run from backend directory
-cd backend && uvicorn app.main:app --reload --port 8001
-# Or from root with PYTHONPATH set:
-# PYTHONPATH=backend uvicorn app.main:app --reload --port 8001
-```
-Backend will be live at `http://127.0.0.1:8001`. OpenAPI docs available at `http://127.0.0.1:8001/docs`.
-
-### 3. Start Frontend
-```bash
-# In a new terminal
+# In a separate terminal, from repository root:
 cd frontend
 npm install
 npm run dev
 ```
-Frontend will be live at `http://localhost:5174` (configured to proxy `/api` requests to backend on port 8001 via `BACKEND_PORT`).
+*Frontend live at `http://localhost:5174` (automatically proxies `/api` to port 8001).*
 
 ---
 
-## Automated Verification & Testing
+## Production Deployment
 
-Run the complete, single-command automated test and verification suite:
+The project is architected for zero-configuration containerized deployments on standard cloud platforms.
 
+### Production Environment Variables
+
+| Variable | Target | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `ENVIRONMENT` | Backend | `development` | Set to `production` in live environments to enforce strict CORS. |
+| `PORT` | Backend | `8000` | Port for the Uvicorn ASGI server. |
+| `CORS_ORIGINS` | Backend | `http://localhost:3000,http://127.0.0.1:3000` | Comma-separated list of allowed client origins (no wildcards allowed in production). |
+| `CACHED_DATASET_PATH` | Backend | `app/data/jan2026.parquet` | Absolute or relative path to the verified replay dataset. |
+| `VITE_API_BASE_URL` | Frontend | `""` (relative `/api`) | Override if the frontend is hosted on a separate domain from the backend API. |
+
+---
+
+### Platform Blueprints
+
+#### Docker Host / VPS (DigitalOcean, Hetzner, AWS EC2, Coolify, Portainer)
+1. Clone the repository and configure `.env` based on `.env.example`.
+2. Run `docker compose up -d --build`.
+3. Configure your reverse proxy (Caddy, Traefik, Nginx) or DNS to point port 3000 to your public domain with TLS.
+
+#### Render / Railway / Fly.io (Container PaaS)
+- **Backend Service:**
+  - Build Type: `Dockerfile`
+  - Context: `./backend`
+  - Port: `8000`
+  - Healthcheck Endpoint: `/api/health`
+- **Frontend Service:**
+  - Build Type: `Dockerfile`
+  - Context: `./frontend`
+  - Port: `80`
+  - Or deploy statically: build command `cd frontend && npm install && npm run build`, publish directory `frontend/dist`. Set `VITE_API_BASE_URL` to the backend URL.
+
+#### Static Frontend Hosting (Vercel / Netlify / Cloudflare Pages)
+- Connect repo, set root directory to `frontend`.
+- Build command: `npm run build`.
+- Output directory: `dist`.
+- Set environment variable: `VITE_API_BASE_URL=https://your-backend-api.com`.
+- SPA routing fallback is handled by the included [`frontend/vercel.json`](frontend/vercel.json).
+
+---
+
+## Core Methodology & Economics
+
+### 1. Invariant Physical Energy Accounting
+For every half-hour settlement period $t$ ($dt = 0.5\text{ h}$, $1\text{ GW} \times 1000 \times 0.5 = 500\text{ MWh}$):
+
+$$\text{Elexon Shortfall} = \max(0, \text{Forecast}_t - \text{Actual}_t) \times 500$$
+$$\text{Safe Plan Shortfall} = \max(0, \text{SafePlan}_t - \text{Actual}_t) \times 500$$
+$$\text{Avoided Shortfall} = \text{Elexon Shortfall} - \text{Safe Plan Shortfall}$$
+$$\text{Incremental Extra Supply} = \text{Safe Surplus} - \text{Elexon Surplus}$$
+
+**Conservation Identity:** At both interval and aggregated daily levels, avoided shortfall and incremental extra supply conserve total volume cut exactly:
+$$\text{Avoided Shortfall (MWh)} + \text{Incremental Extra Supply (MWh)} = \text{Total Volume Cut (MWh)}$$
+
+### 2. Economic Procurement Ledger & Break-Even Premium
+Given advance day-ahead power price $P_{\text{adv}}$, replacement power ratio $k = P_{\text{rep}} / P_{\text{adv}}$, and surplus recovery fraction $s \in [0, 1]$ (default $s=0.0$, unrecoverable surplus):
+
+$$\text{Net Saving (£)} = \left[ \text{Avoided Shortfall} \times (k - 1) - \text{Incremental Extra} \times (1 - s) \right] \times P_{\text{adv}}$$
+$$\text{Break-Even Price Ratio } k^* = 1 + (1 - s) \times \frac{\text{Incremental Extra Supply}}{\text{Avoided Shortfall}}$$
+
+- At $s = 0.0$, $k^* = 1 + \text{Extra} / \text{Avoided}$.
+- In January 2026, the true break-even for `flat_15` is **$1.405\times$** (avoided 1,016,662 MWh, extra 411,934 MWh). Caution breaks even when replacement electricity costs at least 40.5% more than day-ahead contracts.
+- At $k = 1.0$, the plan loses $-\text{Extra} \times P_{\text{adv}}$, directly illustrating the cost of insurance on days where central forecasts are accurate.
+
+### 3. Out-of-Time Validation Record (Feb–Sep 2026)
+To prevent overfitting or post-hoc tuning, models were evaluated across **241 delivery days** (11,568 half-hour intervals) under frozen protocol (`PROTOCOL_v2.md`):
+
+| Model | Total Avoided (MWh) | Extra Supply (MWh) | Break-Even $k^*$ ($s=0$) | Net MWh ($k=2, s=0$) | Days $k^* < 2\times$ | Monthly Win Record |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **`flat_15` (Headline)** | **4,582,367.6** | **1,343,575.9** | **$1.414\times$** | **+3,238,791.7** | **175 / 241 (72.6%)** | **8 / 8 Months (100%)** |
+| `v2_proportional` | 4,213,293.7 | 1,739,786.1 | $1.413\times$ | +2,473,507.6 | 170 / 241 | 0 / 8 Months |
+| `expanding_ratio` | 4,374,383.1 | 2,136,547.0 | $1.488\times$ | +2,237,836.1 | 163 / 241 | 0 / 8 Months |
+| `v1_additive` | 3,893,027.7 | 2,485,394.3 | $1.638\times$ | +1,407,633.4 | 146 / 241 | 0 / 8 Months |
+
+*`flat_15` is confirmed as the durable headline model. Dynamic rolling-quantile models timed the market poorly during summer calm regimes, underperforming simple uniform haircuts of matched volume.*
+
+### 4. Empirical Band Disclosure
+The indicative $[p10, p90]$ range is an **empirical historical error range, not a calibrated probability interval**. Across January 2026, realised coverage is 55.8% (ranging from 0% on weather regime shifts to 100% on steady wind days). Across Feb–Sep 2026 validation, realised coverage is 62.5%.
+
+---
+
+## API Reference
+
+All endpoints return JSON and adhere to standard HTTP status codes.
+
+| Method | Endpoint | Query Parameters | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/health` | None | Returns backend status, dataset record counts, and date coverage. |
+| `GET` | `/api/estimate` | `date` (YYYY-MM-DD), `percentile` (60–90) | Day-ahead safe estimate, empirical band, slider trade-offs, and file provenance. |
+| `GET` | `/api/check` | `date` (YYYY-MM-DD), `percentile` (60–90) | Replays decision against realized FUELHH actuals; reports avoided MWh, extra MWh, and MAE. |
+| `GET` | `/api/summary` | None | Replay summary across all models and baseline comparators for January 2026. |
+| `GET` | `/api/validation`| None | Out-of-time validation metrics across Feb–Sep 2026 from generated summary. |
+
+### Example Request & Response
 ```bash
-./scripts/check.sh
+curl -s "http://localhost:8000/api/estimate?date=2026-01-25&percentile=75"
+```
+```json
+{
+  "decision_date": "2026-01-25",
+  "target_date": "2026-01-26",
+  "decision_cutoff_utc": "2026-01-25T09:00:00Z",
+  "selected_percentile": 75.0,
+  "elexon_headline_gw": 12.4207,
+  "safe_headline_gw": 9.8972,
+  "provenance": {
+    "snapshot_filename": "jan2026.parquet",
+    "snapshot_size_kb": 253,
+    "snapshot_sha256": "d997afe42e53663a4dbef2c597da8f515d5490d7fbb159370b28fbb5c9a95f98",
+    "snapshot_record_count": 37696,
+    "snapshot_status": "Replay cache"
+  }
+}
 ```
 
-This runs:
-1. **Dataset Integrity Audit:** Checks schema, UTC timestamps, 1,488 actual intervals, 36,208 forecast intervals, unit conversions, and 100% 48/48 coverage across all 30 days.
-2. **Audit Checks Baseline:** Reproduces F1–F12 audit checks and matched-cut benchmarks.
-3. **30-Date Endpoint Sweep:** Verifies HTTP 200 OK and no nulls/NaNs across all 30 dates for both `/api/estimate` and `/api/check`.
-4. **Backend Test Suite (59 tests):**
-   - Release-blocking no-leakage verification (7 distinct leakage attack scenarios)
-   - Independent 4-interval oracle tests and zero-cut identities
-   - Mathematical property invariant tests (monotonicity, conservation, non-negativity, linearity)
-   - Day-block bootstrap uncertainty quantification (statistically significant positive benefit at $k=2$)
-   - Empirical band realised coverage calibration tests (55.8% Jan, 62.5% out-of-time)
-   - Claims & terminology lint test (preventing hype words)
-   - Frontend literal fallbacks & provenance honesty test
-   - Economic ledger identity and break-even tests
-   - Parquet SHA-256 immutability pin
-5. **Frontend TypeScript Check:** `tsc --noEmit`
-6. **Frontend Production Build:** `vite build`
-
 ---
 
-## Docker & Deployment
+## Verification & Automated Test Suite
 
-### Run Complete Application via Docker Compose (Recommended)
+A single command executes the complete multi-layer verification suite:
+
 ```bash
-# Start both backend (port 8000) and frontend (port 3000)
-docker compose up --build
-```
-Access the application at `http://localhost:3000`.
-
-### Run Backend via Docker Standalone
-```bash
-# Build Docker image
-docker build -t wind-day-ahead-backend -f backend/Dockerfile backend
-
-# Run container
-docker run -p 8000:8000 wind-day-ahead-backend
+bash scripts/check.sh
 ```
 
-### Deploy to Hosting Platforms
-- **Backend:** Suitable for Render, Railway, Fly.io, or AWS ECS using `backend/Dockerfile` or `uvicorn app.main:app --host 0.0.0.0 --port 8000`. Set `CORS_ORIGINS` in environment.
-- **Frontend:** Suitable for Vercel or Netlify. Set `VITE_API_BASE_URL` to your backend URL. The included `frontend/vercel.json` ensures SPA route fallback for `/jan25`, `/jan25/check`, and `/docs`.
+### Verification Layers
+1. **Dataset Integrity Audit:** Asserts schema, UTC timestamps, 1,488 actual intervals (31/31 days with 48/48 intervals), 36,208 forecast rows, and SHA-256 immutability pin.
+2. **Audit Checks Baseline:** Runs `scripts/audit_checks.py` to confirm exact reproduction of empirical audit findings.
+3. **30-Date Endpoint Sweep:** Verifies HTTP 200 OK and absence of NaN/null values across all 30 dates in January 2026 for `/api/estimate` and `/api/check`.
+4. **Backend Test Suite (59 Tests):**
+   - 7 distinct release-blocking zero-future-data-leakage scenario tests.
+   - Independent 4-interval oracle tests and volume conservation checks.
+   - Mathematical property invariant tests (monotonicity, conservation, non-negativity, linearity).
+   - 2,000-draw day-block bootstrap uncertainty quantification.
+   - Empirical band realised coverage tests (55.8% Jan, 62.5% validation).
+   - Automated claims & terminology lint test (`test_claims_lint.py`).
+   - Frontend literal fallback and provenance honesty test (`test_no_frontend_literals.py`).
+   - Physical procurement ledger identity tests.
+5. **Frontend TypeScript Check:** `tsc --noEmit` validates all components and contracts.
+6. **Production Build:** Vite production bundle with route-based code-splitting (all chunks < 500 kB).
 
 ---
 
-## Assumptions & Known Limitations
+## Repository Structure
 
-1. **Assumptions:**
-   - 09:00 UTC day-ahead cutoff is standard operating market cutoff assumption.
-   - Fixed 15% cold-start haircut rule when prior history is zero.
-   - Hourly WINDFOR forecast applies uniformly across both constituent 30-minute settlement periods.
-2. **Limitations:**
-   - The product models physical energy shortfall (MWh); it does not calculate financial cash savings or incorporate electricity market prices.
-   - Not a live trading or operational dispatch recommendation.
-   - The error band is an empirical quantile band, not a calibrated probabilistic prediction interval.
+```
+fuelhh/
+├── backend/
+│   ├── app/
+│   │   ├── main.py                  # FastAPI application entry point
+│   │   ├── config.py                # System settings and CORS validation
+│   │   ├── schemas.py               # Pydantic API response contracts
+│   │   ├── routers/                 # Endpoints: estimate, check, summary, health, validation
+│   │   ├── services/                # Core engines: replay, economics, calibrate, models, stats
+│   │   └── data/                    # Verified Parquet datasets and validation artefacts
+│   ├── tests/                       # 59 automated tests (oracles, leakage, properties, lint)
+│   ├── Dockerfile                   # Python 3.12 production container definition
+│   └── requirements.txt             # Pinned backend dependencies
+├── frontend/
+│   ├── src/
+│   │   ├── pages/                   # LandingPage, EstimatePage, CheckPage, DocsPage
+│   │   ├── components/              # DeepDive, CostRatioCalculator, Charts, Navbar, Footer
+│   │   └── types/                   # TypeScript interfaces
+│   ├── Dockerfile                   # Multi-stage Node builder + Nginx production server
+│   ├── nginx.conf                   # Reverse proxy configuration for /api/
+│   └── package.json                 # Pinned frontend dependencies
+├── docs/
+│   ├── PROTOCOL_v2.md               # Frozen out-of-time validation protocol
+│   ├── VALIDATION.md                # Generated 8-month validation report
+│   ├── CLAIMS_AUDIT.md              # Calibrated language specification
+│   └── screenshots/                 # Application screenshots (desktop & mobile)
+├── scripts/
+│   ├── check.sh                     # Complete single-command verification suite
+│   ├── sweep_test.py                # 30-date automated endpoint sweep
+│   ├── audit_checks.py              # Baseline audit replication script
+│   └── capture_screenshots.py       # Playwright screenshot generator
+├── docker-compose.yml               # Production multi-service orchestration
+└── README.md                        # Project documentation
+```
 
 ---
 
-## Future Scope
+## License & Data Citations
 
-- Expanding lookback beyond 48 hours with seasonal weather-regime clustering.
-- Imbalance price-aware optimization balancing penalty costs against day-ahead contract premiums.
-- Diurnal per-hour calibration accounting for morning/evening wind patterns.
-- Automated streaming ingestion from Elexon BMRS for live operational forecasting.
-
----
-
-## License
-
-Built for demonstration, verification, and technical auditing purposes.
-All source energy data © Elexon BMRS.
+- **Software:** Distributed under the [MIT License](LICENSE).
+- **Energy Data:** Contains public sector information licensed under the Open Government Licence v3.0, sourced from [Elexon BMRS](https://bmrs.elexon.co.uk) (`WINDFOR` Day-Ahead Wind Forecasts and `FUELHH` Half-Hourly Outturn Generation).
+- **Disclaimer:** This software is an analysis and risk-estimation tool for wholesale power planning. It does not constitute real-time operational dispatch instructions or trading advice.
