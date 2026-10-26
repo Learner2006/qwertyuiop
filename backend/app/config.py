@@ -2,8 +2,39 @@
 Frozen parameters according to specification.
 """
 
+import json
 import os
+from typing import List, Optional
 from pydantic import BaseModel
+
+
+def parse_cors_origins(val: Optional[str], env: str = "development") -> List[str]:
+    """Parses CORS origins supporting comma-separated strings or JSON arrays.
+    Fails fast in production if origins are empty or contain wildcard '*'."""
+    if not val:
+        origins = [
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:3000",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:5174",
+            "http://127.0.0.1:3000",
+        ]
+    else:
+        v = val.strip()
+        if v.startswith("[") and v.endswith("]"):
+            try:
+                origins = json.loads(v)
+            except Exception:
+                origins = [x.strip().strip('"').strip("'") for x in v[1:-1].split(",") if x.strip()]
+        else:
+            origins = [x.strip().strip('"').strip("'") for x in v.split(",") if x.strip()]
+
+    if env == "production":
+        if not origins or "*" in origins:
+            raise ValueError("In production, CORS_ORIGINS must not be empty or contain wildcard '*'")
+
+    return origins
 
 
 class Settings(BaseModel):
@@ -44,17 +75,9 @@ class Settings(BaseModel):
     
     # Environment and CORS
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
-    CORS_ORIGINS: list = (
-        [origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()]
-        if os.getenv("CORS_ORIGINS")
-        else [
-            "http://localhost:5173",
-            "http://localhost:5174",
-            "http://localhost:3000",
-            "http://127.0.0.1:5173",
-            "http://127.0.0.1:5174",
-            "http://127.0.0.1:3000",
-        ]
+    CORS_ORIGINS: list = parse_cors_origins(
+        os.getenv("CORS_ORIGINS"),
+        os.getenv("ENVIRONMENT", "development"),
     )
 
 

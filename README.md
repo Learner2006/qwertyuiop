@@ -73,8 +73,6 @@ The application comprises four integrated pages:
 | :---: | :---: |
 | ![Check Page Preview](docs/screenshots/check.png)<br>*Check page: Forecast vs actual with shortfall shading and saved MWh* | ![Docs Page Preview](docs/screenshots/docs.png)<br>*Documentation: Mathematical definitions and replay rules* |
 
-*(Note: Replace image paths above with exported screenshots when deploying to production)*
-
 ---
 
 ## System Architecture
@@ -243,10 +241,12 @@ python scripts/validate_data.py
 
 ### 2. Start Backend Server
 ```bash
-# From workspace root
-uvicorn backend.app.main:app --reload --port 8000
+# From repo root, run from backend directory
+cd backend && uvicorn app.main:app --reload --port 8001
+# Or from root with PYTHONPATH set:
+# PYTHONPATH=backend uvicorn app.main:app --reload --port 8001
 ```
-Backend will be live at `http://localhost:8000`. OpenAPI docs available at `http://localhost:8000/docs`.
+Backend will be live at `http://127.0.0.1:8001`. OpenAPI docs available at `http://127.0.0.1:8001/docs`.
 
 ### 3. Start Frontend
 ```bash
@@ -255,7 +255,7 @@ cd frontend
 npm install
 npm run dev
 ```
-Frontend will be live at `http://localhost:5173`.
+Frontend will be live at `http://localhost:5174` (configured to proxy `/api` requests to backend on port 8001 via `BACKEND_PORT`).
 
 ---
 

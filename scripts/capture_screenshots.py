@@ -69,6 +69,32 @@ def capture_all():
             mobile_page.screenshot(path=mobile_chk_path, full_page=True)
             print(f"  -> Saved {mobile_chk_path}")
 
+        # --- README OVERVIEW SCREENSHOTS ---
+        print("Capturing README overview screenshots (landing, estimate, check, docs)...")
+        # 1. Landing
+        desktop_page.goto(f"{BASE_URL}/", wait_until="networkidle")
+        desktop_page.wait_for_timeout(1000)
+        desktop_page.screenshot(path=os.path.join(OUTPUT_DIR, "landing.png"), full_page=True)
+        print("  -> Saved landing.png")
+
+        # 2. Estimate (Jan 25 default)
+        desktop_page.goto(f"{BASE_URL}/jan25?date=2026-01-25&percentile=75", wait_until="networkidle")
+        desktop_page.wait_for_timeout(1000)
+        desktop_page.screenshot(path=os.path.join(OUTPUT_DIR, "estimate.png"), full_page=True)
+        print("  -> Saved estimate.png")
+
+        # 3. Check (Jan 25 default)
+        desktop_page.goto(f"{BASE_URL}/jan25/check?date=2026-01-25&percentile=75", wait_until="networkidle")
+        desktop_page.wait_for_timeout(1000)
+        desktop_page.screenshot(path=os.path.join(OUTPUT_DIR, "check.png"), full_page=True)
+        print("  -> Saved check.png")
+
+        # 4. Docs
+        desktop_page.goto(f"{BASE_URL}/docs", wait_until="networkidle")
+        desktop_page.wait_for_timeout(1000)
+        desktop_page.screenshot(path=os.path.join(OUTPUT_DIR, "docs.png"), full_page=True)
+        print("  -> Saved docs.png")
+
         browser.close()
     print("All screenshots successfully captured!")
 
