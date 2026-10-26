@@ -37,9 +37,15 @@ Four model candidates are evaluated under this protocol:
 ### Candidate 4: `expanding_ratio` (Expanding Window Empirical Realization Ratio)
 * **Status:** Exploratory candidate, designed after observing full-month outturn persistence.
 * **Mechanism:** Tracks the cumulative empirical realization ratio $\rho = \frac{\sum A}{\sum F}$ over all completed delivery days up to $D-1$.
-  * If fewer than 2 completed delivery days exist ($D \le 2$), falls back to the default 15% haircut ($\rho = 0.85$).
-  * For $D \ge 3$, applies the expanding realized ratio directly:
+  * If fewer than 2 completed delivery days exist ($< 96$ settlement intervals, i.e. $D \le 2$), falls back to the default 15% haircut ($\rho = 0.85$).
+  * For $D \ge 3$, applies the expanding realized ratio directly, strictly clamped to $[0.0, 1.0]$:
     $$\text{Plan}_t = \max(0, \min(1.0, \rho) \times F_t)$$
+
+> [!NOTE] Specification Correction (Finding F9)
+> The initial implementation clamped the realization ratio to `min(1.2, rho)` instead of `min(1.0, rho)` and tested `len(intervals) >= 2` rather than completed delivery days ($\ge 96$ intervals). The corrected specification clamps strictly to $[0.0, 1.0]$ and enforces the $\ge 2$ completed delivery days threshold ($\ge 96$ intervals).
+> Before/After Effect on January 2026 Full-Month Results:
+> - Before correction: Avoided 880,900.8 MWh, Extra 313,618.8 MWh, Break-even 1.356×, Efficiency 73.8%.
+> - After correction: Avoided 880,742.5 MWh, Extra 306,774.7 MWh, Break-even 1.348×, Efficiency 74.2%.
 
 ---
 
@@ -99,7 +105,7 @@ Generated via `python3 scripts/evaluate_models.py` on 2026-10-25.
 | `v1_additive` (p75) | 399,083.8 | 561,943.8 | 2.408× | 41.5% | 8 / 15 | Disqualified (< 90% threshold) |
 | `v2_proportional` (p75) | 432,786.6 | 376,780.8 | 1.871× | 53.5% | 8 / 15 | Qualified ($\ge 401,062.7$ MWh) |
 | **`flat_15` (15% Static)** | **445,625.2** | **227,788.3** | **1.511×** | **66.2%** | **9 / 15** | **Qualified & Winner (Highest Efficiency)** |
-| `expanding_ratio` | 388,447.7 | 191,390.0 | 1.493× | 67.0% | 9 / 15 | Disqualified (< 90% threshold) |
+| `expanding_ratio` | 388,289.4 | 184,546.0 | 1.475× | 67.8% | 10 / 15 | Disqualified (< 90% threshold) |
 
 **Decision Rule Application:**
 * Maximum Avoided Shortfall: $445,625.2$ MWh (`flat_15`).
@@ -131,7 +137,7 @@ Generated via `python3 scripts/evaluate_models.py` on 2026-10-25.
 | `v1_additive` (p75) | 968,903.4 | 985,528.0 | 2.017× | 49.6% | 17 / 30 |
 | `v2_proportional` (p75) | 1,022,628.1 | 905,978.1 | 1.886× | 53.0% | 18 / 30 |
 | **`flat_15` (Production Headline)** | **1,016,662.2** | **411,934.4** | **1.405×** | **71.2%** | **22 / 30** |
-| `expanding_ratio` | 880,900.8 | 313,618.8 | 1.356× | 73.8% | 22 / 30 |
+| `expanding_ratio` | 880,742.5 | 306,774.7 | 1.348× | 74.2% | 23 / 30 |
 
 ---
 

@@ -50,7 +50,7 @@ class PercentileSweepPoint(BaseModel):
 
 class MonthSummaryResponse(BaseModel):
     decision_dates_count: int  # 30
-    total_target_intervals: int  # 1440
+    total_target_intervals: int  # Full month settlement intervals count
     period_start: str  # "2026-01-01"
     period_end: str    # "2026-01-30"
     target_start: str  # "2026-01-02"

@@ -4,6 +4,8 @@ Single source of truth for:
 - v2_proportional (proportional error ratio quantile with cold-start blend)
 - flat_15 (static pre-set 15.0% haircut baseline)
 - expanding_ratio (empirical ratio of actual / forecast over all completed days to D-1)
+- rolling_mean_bias (48h rolling average signed error floored at 0)
+- rolling_mean_ratio (48h rolling average percentage error with cold-start blend)
 """
 
 from typing import Any, Callable, Dict, List, Optional
@@ -16,7 +18,7 @@ from app.services.calibrate import calibrate_daily_forecast, compute_confidence_
 def v1_additive(
     raw_forecast_records: List[dict],
     calibration_records: Optional[List[dict]] = None,
-    percentile: float = 75.0,
+    percentile: float = settings.DEFAULT_PERCENTILE,
     **kwargs: Any,
 ) -> dict:
     """Canonical v1 additive model:
@@ -25,7 +27,7 @@ def v1_additive(
     """
     calib_obs = calibration_records or []
     calib_res = calibrate_daily_forecast(raw_forecast_records, calib_obs, percentile)
-    
+
     plans = [iv["safe_estimate_gw"] for iv in calib_res["intervals"]]
     headline_gw = calib_res["safe_headline_gw"]
     elexon_gw = calib_res["elexon_headline_gw"]
@@ -51,7 +53,7 @@ def v1_additive(
 def v2_proportional(
     raw_forecast_records: List[dict],
     calibration_records: Optional[List[dict]] = None,
-    percentile: float = 75.0,
+    percentile: float = settings.DEFAULT_PERCENTILE,
     **kwargs: Any,
 ) -> dict:
     """Canonical v2 proportional model:
@@ -74,7 +76,9 @@ def v2_proportional(
     else:
         q_pct = settings.COLD_START_HAIRCUT
 
-    applied_ratio = (1.0 - history_weight) * settings.COLD_START_HAIRCUT + history_weight * q_pct
+    applied_ratio = (
+        1.0 - history_weight
+    ) * settings.COLD_START_HAIRCUT + history_weight * q_pct
     applied_ratio = max(0.0, min(1.0, applied_ratio))
 
     plans = []
@@ -91,7 +95,9 @@ def v2_proportional(
             "margin_gw": round(f - p, 4),
         })
 
-    elexon_gw = round(float(np.mean([float(r["generation_gw"]) for r in raw_forecast_records])), 4)
+    elexon_gw = round(
+        float(np.mean([float(r["generation_gw"]) for r in raw_forecast_records])), 4
+    )
     headline_gw = round(float(np.mean(plans)), 4) if plans else 0.0
     margin_gw = round(elexon_gw - headline_gw, 4)
 
@@ -117,11 +123,20 @@ def flat_15(
     **kwargs: Any,
 ) -> dict:
     """Pre-set Flat 15.0% haircut baseline:
-    plan = max(0.0, forecast * 0.85).
+    plan = max(0.0, forecast * (1.0 - COLD_START_HAIRCUT)).
     """
+    haircut = settings.COLD_START_HAIRCUT
+    return flat_haircut(raw_forecast_records, haircut=haircut)
+
+
+def flat_haircut(
+    raw_forecast_records: List[dict],
+    haircut: float = settings.COLD_START_HAIRCUT,
+    **kwargs: Any,
+) -> dict:
+    """Arbitrary uniform flat haircut baseline."""
     plans = []
     intervals = []
-    haircut = settings.COLD_START_HAIRCUT # 0.15
 
     for r in raw_forecast_records:
         f = float(r["generation_gw"])
@@ -135,12 +150,14 @@ def flat_15(
             "margin_gw": round(f - p, 4),
         })
 
-    elexon_gw = round(float(np.mean([float(r["generation_gw"]) for r in raw_forecast_records])), 4)
+    elexon_gw = round(
+        float(np.mean([float(r["generation_gw"]) for r in raw_forecast_records])), 4
+    )
     headline_gw = round(float(np.mean(plans)), 4) if plans else 0.0
     margin_gw = round(elexon_gw - headline_gw, 4)
 
     return {
-        "model_name": "flat_15",
+        "model_name": f"flat_{int(round(haircut * 100))}" if haircut == settings.COLD_START_HAIRCUT else "flat_haircut",
         "plans": plans,
         "intervals": intervals,
         "headline_gw": headline_gw,
@@ -156,22 +173,31 @@ def expanding_ratio(
     completed_days_forecasts: Optional[List[dict]] = None,
     **kwargs: Any,
 ) -> dict:
-    """Expanding-window ratio baseline:
+    """Canonical expanding-window ratio baseline (F9 resolved spec):
     Empirical ratio of (total actual outturn MWh / total day-ahead forecast MWh)
     evaluated across all completed delivery days up to D-1.
-    If fewer than 2 completed days exist, uses 15% haircut (ratio = 0.85).
+    If fewer than 2 completed delivery days exist (< 96 intervals),
+    falls back to 15% static haircut (ratio = 1.0 - COLD_START_HAIRCUT).
+    Clamped strictly to [0.0, 1.0] (no negative haircuts / over-planning).
     Plan = max(0.0, forecast * ratio).
     """
     acts = completed_days_actuals or []
     fcs = completed_days_forecasts or []
 
-    if len(acts) >= 2 and len(fcs) >= 2:
-        tot_act = sum(a["generation_gw"] for a in acts)
-        tot_fc = sum(f["generation_gw"] for f in fcs)
-        ratio = (tot_act / tot_fc) if tot_fc > 0 else 0.85
-        ratio = max(0.0, min(1.2, ratio))
+    if (
+        len(acts) >= settings.BLEND_THRESHOLD_OBSERVATIONS
+        and len(fcs) >= settings.BLEND_THRESHOLD_OBSERVATIONS
+    ):
+        tot_act = sum(float(a["generation_gw"]) for a in acts)
+        tot_fc = sum(float(f["generation_gw"]) for f in fcs)
+        ratio = (
+            (tot_act / tot_fc)
+            if tot_fc > 0
+            else (1.0 - settings.COLD_START_HAIRCUT)
+        )
+        ratio = max(0.0, min(1.0, ratio))
     else:
-        ratio = 0.85
+        ratio = 1.0 - settings.COLD_START_HAIRCUT
 
     plans = []
     intervals = []
@@ -187,7 +213,9 @@ def expanding_ratio(
             "margin_gw": round(f - p, 4),
         })
 
-    elexon_gw = round(float(np.mean([float(r["generation_gw"]) for r in raw_forecast_records])), 4)
+    elexon_gw = round(
+        float(np.mean([float(r["generation_gw"]) for r in raw_forecast_records])), 4
+    )
     headline_gw = round(float(np.mean(plans)), 4) if plans else 0.0
     margin_gw = round(elexon_gw - headline_gw, 4)
 
@@ -203,15 +231,111 @@ def expanding_ratio(
     }
 
 
+def rolling_mean_bias(
+    raw_forecast_records: List[dict],
+    calibration_records: Optional[List[dict]] = None,
+    **kwargs: Any,
+) -> dict:
+    """48-hour rolling mean forecast signed error subtracted from forecast."""
+    calib_obs = calibration_records or []
+    errs = [float(obs["error_gw"]) for obs in calib_obs]
+    m_err = float(np.mean(errs)) if errs else 0.0
+    margin = max(0.0, m_err)
+
+    plans = []
+    intervals = []
+    for r in raw_forecast_records:
+        f = float(r["generation_gw"])
+        p = max(0.0, f - margin)
+        plans.append(p)
+        intervals.append({
+            "interval_start": r["interval_start"],
+            "settlement_period": r["settlement_period"],
+            "forecast_gw": f,
+            "plan_gw": round(p, 4),
+            "margin_gw": round(f - p, 4),
+        })
+
+    elexon_gw = round(
+        float(np.mean([float(r["generation_gw"]) for r in raw_forecast_records])), 4
+    )
+    headline_gw = round(float(np.mean(plans)), 4) if plans else 0.0
+    margin_gw = round(elexon_gw - headline_gw, 4)
+
+    return {
+        "model_name": "rolling_mean_bias",
+        "plans": plans,
+        "intervals": intervals,
+        "headline_gw": headline_gw,
+        "elexon_headline_gw": elexon_gw,
+        "margin_gw": margin_gw,
+        "mean_error_gw": round(m_err, 4),
+    }
+
+
+def rolling_mean_ratio(
+    raw_forecast_records: List[dict],
+    calibration_records: Optional[List[dict]] = None,
+    **kwargs: Any,
+) -> dict:
+    """48-hour rolling mean forecast error ratio (e/f) subtracted from forecast."""
+    calib_obs = calibration_records or []
+    n = len(calib_obs)
+    w = min(1.0, n / float(settings.BLEND_THRESHOLD_OBSERVATIONS))
+    pct_errs = [
+        (float(o["error_gw"]) / float(o["forecast_gw"]))
+        for o in calib_obs
+        if float(o.get("forecast_gw", 0)) > 0.01
+    ]
+    raw_m = max(0.0, float(np.mean(pct_errs))) if pct_errs else settings.COLD_START_HAIRCUT
+    ratio_m = (1.0 - w) * settings.COLD_START_HAIRCUT + w * raw_m
+    ratio_m = max(0.0, min(1.0, ratio_m))
+
+    plans = []
+    intervals = []
+    for r in raw_forecast_records:
+        f = float(r["generation_gw"])
+        p = max(0.0, f * (1.0 - ratio_m))
+        plans.append(p)
+        intervals.append({
+            "interval_start": r["interval_start"],
+            "settlement_period": r["settlement_period"],
+            "forecast_gw": f,
+            "plan_gw": round(p, 4),
+            "margin_gw": round(f - p, 4),
+        })
+
+    elexon_gw = round(
+        float(np.mean([float(r["generation_gw"]) for r in raw_forecast_records])), 4
+    )
+    headline_gw = round(float(np.mean(plans)), 4) if plans else 0.0
+    margin_gw = round(elexon_gw - headline_gw, 4)
+
+    return {
+        "model_name": "rolling_mean_ratio",
+        "plans": plans,
+        "intervals": intervals,
+        "headline_gw": headline_gw,
+        "elexon_headline_gw": elexon_gw,
+        "margin_gw": margin_gw,
+        "mean_ratio": round(ratio_m, 4),
+    }
+
+
 MODEL_REGISTRY: Dict[str, Callable[..., dict]] = {
     "v1_additive": v1_additive,
     "v2_proportional": v2_proportional,
     "flat_15": flat_15,
+    "flat_haircut": flat_haircut,
     "expanding_ratio": expanding_ratio,
+    "rolling_mean_bias": rolling_mean_bias,
+    "rolling_mean_ratio": rolling_mean_ratio,
 }
 
 
 def get_model(name: str) -> Callable[..., dict]:
     if name not in MODEL_REGISTRY:
-        raise ValueError(f"Unknown model '{name}'. Available: {list(MODEL_REGISTRY.keys())}")
+        raise ValueError(
+            f"Unknown model '{name}'. Available: {list(MODEL_REGISTRY.keys())}"
+        )
     return MODEL_REGISTRY[name]

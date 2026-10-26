@@ -151,7 +151,7 @@ For a decision made on date $D$ for target delivery date $D+1$:
 | Model | Status | Avoided Shortfall (MWh) | Incremental Extra (MWh) | Break-Even ($k^*$) | Days where break-even < 2x |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`flat_15`** | **Selected Production Headline (M3 Rule)** | **1,016,662 MWh** | **411,934 MWh** | **1.405×** | **22 / 30 days** |
-| `expanding_ratio` | Exploratory (Realization Ratio) | 880,901 MWh | 313,619 MWh | 1.356× | 22 / 30 days |
+| `expanding_ratio` | Exploratory (Realization Ratio) | 880,743 MWh | 306,775 MWh | 1.348× | 23 / 30 days |
 | `v2_proportional` | Exploratory (Relative Error p75) | 1,022,628 MWh | 905,978 MWh | 1.886× | 18 / 30 days |
 | `v1_additive` | Pre-declared Baseline (p75) | 968,903 MWh | 985,528 MWh | 2.017× | 17 / 30 days |
 

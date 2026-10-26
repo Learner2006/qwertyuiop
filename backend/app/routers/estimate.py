@@ -26,29 +26,16 @@ from app.schemas import (
 from app.services.calibrate import calibrate_daily_forecast
 from app.services.models import v2_proportional
 from app.services.prepare import DataManager
+from app.services.replay import replay, clear_replay_cache
+
+class _DailyInputsCacheWrapper(dict):
+    def clear(self):
+        super().clear()
+        clear_replay_cache()
+
+_daily_inputs_cache = _DailyInputsCacheWrapper()
 
 router = APIRouter(tags=["Estimate"])
-
-# Cache for historical daily replay inputs to guarantee sub-millisecond execution
-_daily_inputs_cache: Dict[int, dict] = {}
-
-
-def _get_day_inputs(d: int, dm: DataManager) -> dict:
-    if d not in _daily_inputs_cache:
-        d_date = datetime.date(2026, 1, d)
-        t_date = d_date + datetime.timedelta(days=1)
-        fc = dm.select_target_forecast(d_date, t_date)
-        cal = dm.get_calibration_observations(d_date)
-        acts = dm.get_target_actuals(t_date)
-        _daily_inputs_cache[d] = {
-            "dec_date": d_date,
-            "target_date": t_date,
-            "fc": fc,
-            "cal": cal,
-            "acts": acts,
-        }
-    return _daily_inputs_cache[d]
-
 
 def _compute_completed_track_record(
     dec_date: datetime.date,
@@ -56,62 +43,46 @@ def _compute_completed_track_record(
     dm: DataManager
 ) -> CompletedTrackRecord:
     d = dec_date.day
-    daily_records: List[CompletedTrackRecordDay] = []
-    tot_avoided = 0.0
-    tot_extra = 0.0
-    reduced_count = 0
-    increased_count = 0
-    days_break_even_under_2x_count = 0
-
     # Only completed target days before cutoff of dec_date:
     # On dec_date at 09:00 UTC, target day d-1 is fully delivered and actuals available.
     # Target day d-1 was decided on day d-2.
     # So decisions k in [1, d-2] are the completed decisions.
-    for k in range(1, d - 1):
-        day_inp = _get_day_inputs(k, dm)
-        res = calibrate_daily_forecast(day_inp["fc"], day_inp["cal"], percentile)
-        acts = day_inp["acts"]
-        fc = day_inp["fc"]
+    if d <= 2:
+        return CompletedTrackRecord(
+            completed_days_count=0,
+            total_avoided_shortfall_mwh=0.0,
+            total_extra_supply_mwh=0.0,
+            days_reduced_count=0,
+            days_increased_count=0,
+            days_break_even_under_2x=0,
+            daily_records=[],
+        )
 
-        # 500 MWh per half hour per GW
-        e_sf = sum(max(0.0, f["generation_gw"] - a["generation_gw"]) * 500.0 for f, a in zip(fc, acts))
-        s_sf = sum(max(0.0, s["safe_estimate_gw"] - a["generation_gw"]) * 500.0 for s, a in zip(res["intervals"], acts))
-        avoided = e_sf - s_sf
+    comp_days = range(1, d - 1)
+    res = replay("v1_additive", comp_days, percentile=percentile, dm=dm)
 
-        e_sp = sum(max(0.0, a["generation_gw"] - f["generation_gw"]) * 500.0 for f, a in zip(fc, acts))
-        s_sp = sum(max(0.0, a["generation_gw"] - s["safe_estimate_gw"]) * 500.0 for s, a in zip(res["intervals"], acts))
-        extra = s_sp - e_sp
-
-        tot_avoided += avoided
-        tot_extra += extra
-        if avoided > 0.01:
-            reduced_count += 1
-        else:
-            increased_count += 1
-
-        is_be = (avoided > extra)
-        if is_be:
-            days_break_even_under_2x_count += 1
-
-        daily_records.append(CompletedTrackRecordDay(
-            decision_date=day_inp["dec_date"].isoformat(),
-            target_date=day_inp["target_date"].isoformat(),
-            target_date_label=day_inp["target_date"].strftime("%d %b"),
-            elexon_shortfall_mwh=round(e_sf, 1),
-            safe_shortfall_mwh=round(s_sf, 1),
-            avoided_shortfall_mwh=round(avoided, 1),
-            extra_supply_mwh=round(extra, 1),
-            is_shortfall_reduced=avoided > 0.01,
-            is_break_even_under_2x=is_be,
-        ))
+    daily_records = [
+        CompletedTrackRecordDay(
+            decision_date=day["decision_date"],
+            target_date=day["target_date"],
+            target_date_label=day["target_date_label"],
+            elexon_shortfall_mwh=day["elexon_shortfall_mwh"],
+            safe_shortfall_mwh=day["safe_shortfall_mwh"],
+            avoided_shortfall_mwh=day["avoided_shortfall_mwh"],
+            extra_supply_mwh=day["extra_supply_mwh"],
+            is_shortfall_reduced=day["is_shortfall_reduced"],
+            is_break_even_under_2x=day["is_break_even_under_2x"],
+        )
+        for day in res["per_day"]
+    ]
 
     return CompletedTrackRecord(
-        completed_days_count=len(daily_records),
-        total_avoided_shortfall_mwh=round(tot_avoided, 1),
-        total_extra_supply_mwh=round(tot_extra, 1),
-        days_reduced_count=reduced_count,
-        days_increased_count=increased_count,
-        days_break_even_under_2x=days_break_even_under_2x_count,
+        completed_days_count=res["completed_days_count"],
+        total_avoided_shortfall_mwh=res["total_avoided_shortfall_mwh"],
+        total_extra_supply_mwh=res["total_incremental_surplus_mwh"],
+        days_reduced_count=res["days_shortfall_reduced"],
+        days_increased_count=res["days_shortfall_increased"],
+        days_break_even_under_2x=res["days_break_even_under_2x"],
         daily_records=daily_records,
     )
 
